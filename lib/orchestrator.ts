@@ -782,7 +782,7 @@ export async function executeOrchestrator(input: OrchestrationInput): Promise<Or
     }
 
     return {
-      answer: `**SolTrace AI Transaction Scanner**\n\nTo scan the Solana blockchain, please provide a wallet address or transaction signature in your message (e.g., \`7xKXtg...\` or a transaction hash).\n\nYou can ask any natural language question, such as:\n- *"Scan \`7xKXtg...\` and tell me what its largest transactions are"*\n- *"Did this address sell any tokens recently?"*\n- *"Who transfers the most SOL into this wallet?"*\n- *"Audit wallet security for \`7xKXtg...\`"*\n- *"Visualize money flow for \`7xKXtg...\`"*`,
+      answer: `**SolTrace AI Transaction Scanner**\n\nTo scan the Solana blockchain, please provide a wallet address or transaction signature in your message (e.g., \`<wallet-address>\` or a transaction hash).\n\nYou can ask any natural language question, such as:\n- *"Scan \`<wallet-address>\` and tell me what its largest transactions are"*\n- *"Did this address sell any tokens recently?"*\n- *"Who transfers the most SOL into this wallet?"*\n- *"Audit wallet security for \`<wallet-address>\`"*\n- *"Visualize money flow for \`<wallet-address>\`"*`,
       classification: 'LOOKUP',
       toolCalls: [],
       structuredData: { promptForAddress: true },

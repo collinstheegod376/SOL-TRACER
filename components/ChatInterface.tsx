@@ -461,7 +461,7 @@ export function ChatInterface() {
                 <div className="pt-2 flex flex-wrap gap-1.5 border-t border-[#2A2C31]/50">
                   <button
                     type="button"
-                    onClick={() => handleSendMessage("hi! how are you and what can you do?")}
+                    onClick={() => handleSendMessage("hi! how are you?")}
                     className="px-2.5 py-1 rounded-full text-[11px] font-mono bg-[#2A2C31]/60 hover:bg-[#3B82F6]/20 text-[#F5F6F8] hover:text-[#60A5FA] border border-[#2A2C31] hover:border-[#3B82F6]/40 transition-colors cursor-pointer"
                   >
                     👋 Say Hello
@@ -475,17 +475,24 @@ export function ChatInterface() {
                   </button>
                   <button
                     type="button"
-                    onClick={() => handleSendMessage("visualize money flow for SASg84vE3sftrkfHSTnHqb8LBRk1SMyNVn9weXYDfcf")}
+                    onClick={() => handleSendMessage("How do visual money flow diagrams work?")}
                     className="px-2.5 py-1 rounded-full text-[11px] font-mono bg-[#2A2C31]/60 hover:bg-[#3B82F6]/20 text-[#F5F6F8] hover:text-[#60A5FA] border border-[#2A2C31] hover:border-[#3B82F6]/40 transition-colors cursor-pointer"
                   >
                     📊 Visual Flow
                   </button>
                   <button
                     type="button"
-                    onClick={() => handleSendMessage("audit wallet security for SASg84vE3sftrkfHSTnHqb8LBRk1SMyNVn9weXYDfcf")}
+                    onClick={() => handleSendMessage("How does the wallet security and drainer audit work?")}
                     className="px-2.5 py-1 rounded-full text-[11px] font-mono bg-[#2A2C31]/60 hover:bg-[#3B82F6]/20 text-[#F5F6F8] hover:text-[#60A5FA] border border-[#2A2C31] hover:border-[#3B82F6]/40 transition-colors cursor-pointer"
                   >
                     🛡️ Security Audit
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleSendMessage("How do you track DEX swaps and trading PnL?")}
+                    className="px-2.5 py-1 rounded-full text-[11px] font-mono bg-[#2A2C31]/60 hover:bg-[#3B82F6]/20 text-[#F5F6F8] hover:text-[#60A5FA] border border-[#2A2C31] hover:border-[#3B82F6]/40 transition-colors cursor-pointer"
+                  >
+                    📈 DEX Trades
                   </button>
                 </div>
               </div>

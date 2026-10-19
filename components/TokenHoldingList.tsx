@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { Coins, ExternalLink, TrendingUp, TrendingDown, DollarSign } from "lucide-react";
+import { Coins, ExternalLink, DollarSign } from "lucide-react";
 import { shortenAddress, formatNumber, formatCurrency, cn } from "@/lib/utils";
 
 export interface TokenHolding {
@@ -45,18 +45,18 @@ export function TokenHoldingList({
   return (
     <div
       className={cn(
-        "w-full bg-[#17181B] border border-[#2A2C31] overflow-hidden my-3",
+        "w-full bg-[#FFFFFF] border border-[#E5E7EB] rounded-xl overflow-hidden my-3 shadow-xs",
         className
       )}
     >
       {/* Portfolio Header Banner */}
-      <div className="p-4 border-b border-[#2A2C31] flex flex-wrap items-center justify-between gap-3 bg-gradient-to-r from-[#17181B] via-[#1D1F23] to-[#17181B]">
+      <div className="p-4 border-b border-[#E5E7EB] flex flex-wrap items-center justify-between gap-3 bg-[#F8F9FA]">
         <div>
-          <div className="flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-wider text-[#9AA0AB]">
-            <DollarSign className="w-3.5 h-3.5 text-[#34D399]" />
+          <div className="flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-wider text-[#5D5D5D]">
+            <DollarSign className="w-3.5 h-3.5 text-[#10B981]" />
             <span>Estimated Portfolio Value</span>
           </div>
-          <div className="text-2xl font-bold font-mono text-[#F5F6F8] mt-0.5 tracking-tight">
+          <div className="text-2xl font-bold font-mono text-[#0D0D0D] mt-0.5 tracking-tight">
             {formatCurrency(totalPortfolioValue)}
           </div>
         </div>
@@ -64,147 +64,103 @@ export function TokenHoldingList({
         <div className="flex items-center gap-4 text-xs font-mono">
           {solBalance !== undefined && (
             <div className="flex flex-col items-end">
-              <span className="text-[#9AA0AB] text-[10px]">SOL Balance</span>
-              <span className="text-[#F5F6F8] font-medium">
+              <span className="text-[#5D5D5D] text-[10px]">SOL Balance</span>
+              <span className="text-[#0D0D0D] font-medium">
                 {formatNumber(solBalance, { maxDecimals: 3 })} SOL
               </span>
-              <span className="text-[10px] text-[#9AA0AB]">
+              <span className="text-[10px] text-[#8F8F8F]">
                 ({formatCurrency(solUsdValue)})
               </span>
             </div>
           )}
-          <div className="flex flex-col items-end border-l border-[#2A2C31] pl-4">
-            <span className="text-[#9AA0AB] text-[10px]">SPL Assets</span>
-            <span className="text-[#3B82F6] font-medium">
+          <div className="flex flex-col items-end border-l border-[#E5E7EB] pl-4">
+            <span className="text-[#5D5D5D] text-[10px]">SPL Assets</span>
+            <span className="text-[#0D0D0D] font-medium">
               {tokens.length} tokens
             </span>
-            <span className="text-[10px] text-[#9AA0AB]">
+            <span className="text-[10px] text-[#8F8F8F]">
               ({formatCurrency(tokensUsdTotal)})
             </span>
           </div>
         </div>
       </div>
 
-      {/* Filter / Search Bar */}
+      {/* Filter / Search Bar if many tokens */}
       {tokens.length > 4 && (
-        <div className="px-4 py-2 border-b border-[#2A2C31] bg-[#0F1012]/40">
+        <div className="px-4 py-2 border-b border-[#E5E7EB] bg-[#FFFFFF]">
           <input
             type="text"
             value={filterQuery}
             onChange={(e) => setFilterQuery(e.target.value)}
-            placeholder="Filter by token name, symbol, or mint..."
-            className="w-full bg-[#17181B] border border-[#2A2C31] rounded-none px-3 py-1.5 text-xs text-[#F5F6F8] placeholder-[#9AA0AB]/60 focus:outline-none focus:border-[#3B82F6] font-mono"
+            placeholder="Filter holdings by name or symbol..."
+            className="w-full bg-[#F4F4F4] text-xs font-mono text-[#0D0D0D] placeholder-[#8F8F8F] px-3 py-1.5 rounded-full border border-[#E5E7EB] focus:outline-none focus:border-[#0D0D0D]"
           />
         </div>
       )}
 
-      {/* Token List */}
+      {/* Responsive Holdings List */}
       <div className="overflow-x-auto">
-        <table className="w-full text-left border-collapse">
+        <table className="w-full text-left text-xs border-collapse">
           <thead>
-            <tr className="border-b border-[#2A2C31] text-[11px] uppercase tracking-wider text-[#9AA0AB] bg-[#0F1012]/20">
-              <th className="py-2.5 px-4 font-medium">Asset</th>
-              <th className="py-2.5 px-3 font-medium text-right">Holdings</th>
-              <th className="py-2.5 px-3 font-medium text-right">Price</th>
-              <th className="py-2.5 px-4 font-medium text-right">USD Value</th>
+            <tr className="border-b border-[#E5E7EB] bg-[#FFFFFF] text-[11px] font-medium text-[#5D5D5D]">
+              <th className="px-3.5 py-2.5">Asset</th>
+              <th className="px-3.5 py-2.5 text-right">Balance</th>
+              <th className="px-3.5 py-2.5 text-right">Price</th>
+              <th className="px-3.5 py-2.5 text-right">Value (USD)</th>
+              <th className="px-3.5 py-2.5 w-10"></th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-[#2A2C31]/50 text-xs">
+          <tbody className="divide-y divide-[#F0F2F5]">
             {filteredTokens.length === 0 ? (
               <tr>
-                <td colSpan={4} className="py-8 text-center text-xs text-[#9AA0AB]">
+                <td colSpan={5} className="text-center py-6 text-xs text-[#8F8F8F]">
                   No token holdings found
                 </td>
               </tr>
             ) : (
-              filteredTokens.map((token) => (
+              filteredTokens.map((t) => (
                 <tr
-                  key={token.mint}
-                  className="hover:bg-[#2A2A2D]/30 transition-colors group"
+                  key={t.mint}
+                  className="hover:bg-[#F8F9FA] transition-colors group"
                 >
-                  {/* Token Icon & Details */}
-                  <td className="py-3 px-4">
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-full bg-[#2A2C31] flex items-center justify-center overflow-hidden border border-[#2A2C31] shrink-0 text-[10px] font-bold text-[#F5F6F8]">
-                        {token.icon ? (
-                          <img
-                            src={token.icon}
-                            alt={token.symbol}
-                            className="w-full h-full object-cover"
-                            onError={(e) => {
-                              // Fallback on load error
-                              (e.target as HTMLElement).style.display = "none";
-                            }}
-                          />
-                        ) : (
-                          <span>{token.symbol.slice(0, 3)}</span>
-                        )}
+                  <td className="px-3.5 py-2.5">
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-6 h-6 rounded-full bg-[#F4F4F4] border border-[#E5E7EB] flex items-center justify-center font-mono text-[10px] font-bold text-[#0D0D0D] shrink-0">
+                        {t.symbol.slice(0, 2).toUpperCase()}
                       </div>
-
                       <div className="flex flex-col min-w-0">
-                        <div className="flex items-center gap-1.5">
-                          <span className="font-semibold text-[#F5F6F8] truncate max-w-[120px]">
-                            {token.name}
-                          </span>
-                          <span className="font-mono text-[11px] text-[#9AA0AB] bg-[#2A2C31]/40 px-1.5 py-0.2 rounded-full">
-                            {token.symbol}
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-1 text-[10px] font-mono text-[#9AA0AB]">
-                          <span>{shortenAddress(token.mint, 3)}</span>
-                          <a
-                            href={`https://solscan.io/token/${token.mint}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="hover:text-[#3B82F6] transition-colors"
-                            title="Inspect mint on Solscan"
-                          >
-                            <ExternalLink className="w-2.5 h-2.5" />
-                          </a>
-                        </div>
+                        <span className="font-semibold text-xs text-[#0D0D0D]">
+                          {t.symbol}
+                        </span>
+                        <span className="text-[10px] text-[#5D5D5D] truncate max-w-[120px]">
+                          {t.name}
+                        </span>
                       </div>
                     </div>
                   </td>
 
-                  {/* Token Balance */}
-                  <td className="py-3 px-3 text-right">
-                    <div className="font-mono text-[#F5F6F8] font-medium">
-                      {formatNumber(token.amount, { maxDecimals: 4 })}
-                    </div>
-                    <div className="text-[10px] text-[#9AA0AB] font-mono">
-                      {token.symbol}
-                    </div>
+                  <td className="px-3.5 py-2.5 text-right font-mono font-medium text-[#0D0D0D]">
+                    {formatNumber(t.amount, { maxDecimals: 4 })}
                   </td>
 
-                  {/* Token Price */}
-                  <td className="py-3 px-3 text-right">
-                    <div className="font-mono text-[#F5F6F8]">
-                      {token.priceUsd < 0.01
-                        ? `$${token.priceUsd.toFixed(6)}`
-                        : formatCurrency(token.priceUsd)}
-                    </div>
-                    {token.change24h !== undefined && (
-                      <div
-                        className={cn(
-                          "text-[10px] font-mono flex items-center justify-end gap-0.5",
-                          token.change24h >= 0 ? "text-[#34D399]" : "text-[#F472B6]"
-                        )}
-                      >
-                        {token.change24h >= 0 ? (
-                          <TrendingUp className="w-2.5 h-2.5" />
-                        ) : (
-                          <TrendingDown className="w-2.5 h-2.5" />
-                        )}
-                        <span>{token.change24h > 0 ? "+" : ""}{token.change24h.toFixed(1)}%</span>
-                      </div>
-                    )}
+                  <td className="px-3.5 py-2.5 text-right font-mono text-[#5D5D5D]">
+                    {t.priceUsd > 0 ? formatCurrency(t.priceUsd) : "—"}
                   </td>
 
-                  {/* USD Value */}
-                  <td className="py-3 px-4 text-right">
-                    <span className="font-mono text-sm font-semibold text-[#F5F6F8]">
-                      {formatCurrency(token.usdValue)}
-                    </span>
+                  <td className="px-3.5 py-2.5 text-right font-mono font-semibold text-[#0D0D0D]">
+                    {t.usdValue > 0 ? formatCurrency(t.usdValue) : "—"}
+                  </td>
+
+                  <td className="px-3.5 py-2.5 text-center">
+                    <a
+                      href={`https://solscan.io/token/${t.mint}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="p-1 hover:bg-[#E5E7EB] rounded text-[#8F8F8F] hover:text-[#0D0D0D] transition-colors inline-block"
+                      title="View token on Solscan"
+                    >
+                      <ExternalLink className="w-3 h-3" />
+                    </a>
                   </td>
                 </tr>
               ))

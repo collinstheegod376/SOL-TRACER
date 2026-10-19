@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Geist+Mono:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Geist+Mono:wght@400;500;600;700&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -6,77 +6,69 @@
 
 @layer base {
   :root {
-    --canvas: #0F1012;
-    --surface: #17181B;
-    --surface-raised: #2A2A2D;
-    --hairline: #2A2C31;
-    --ink: #F5F6F8;
-    --body: #9AA0AB;
-    --primary: #3B82F6;
-    --primary-hover: #2563EB;
-    --accent: #F472B6;
-    --accent-gold: #FBBF24;
-    --accent-green: #34D399;
-    --accent-purple: #A78BFA;
+    --canvas: #FCFCFC;
+    --surface: #FFFFFF;
+    --surface-raised: #F4F4F4;
+    --hairline: rgba(0, 0, 0, 0.08);
+    --ink: #0D0D0D;
+    --body: #5D5D5D;
+    --neutral: #8F8F8F;
+    --primary: #0D0D0D;
+    --primary-hover: #262626;
+    --accent: #3566F0;
+    --accent-green: #10B981;
+    --accent-amber: #F59E0B;
   }
 
   * {
     box-sizing: border-box;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  html {
+    color-scheme: light;
   }
 
   body {
-    background-color: #0F1012;
-    color: #F5F6F8;
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background-color: #FCFCFC;
+    color: #0D0D0D;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     min-height: 100vh;
+    overflow-x: hidden;
   }
 }
 
-/* Custom Scrollbar */
+/* Custom Scrollbar - Light and minimal */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
 }
 
 ::-webkit-scrollbar-track {
-  background: #0F1012;
+  background: transparent;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #2A2C31;
+  background: #E5E7EB;
   border-radius: 9999px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #3B82F6;
+  background: #D1D5DB;
 }
 
-/* Typography Utility Classes */
+/* Monospace Numbers */
 .font-mono-numbers {
   font-family: 'Geist Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
   font-feature-settings: 'tnum' on, 'zero' on;
 }
 
 .heading-display {
-  font-family: 'Inter', sans-serif;
-  letter-spacing: -1.2px;
+  letter-spacing: -0.025em;
 }
 
 .heading-sub {
-  font-family: 'Inter', sans-serif;
-  letter-spacing: -0.48px;
-}
-
-.border-hairline {
-  border-color: #2A2C31;
-}
-
-.border-b-hairline {
-  border-bottom-color: #2A2C31;
-}
-
-.border-t-hairline {
-  border-top-color: #2A2C31;
+  letter-spacing: -0.015em;
 }

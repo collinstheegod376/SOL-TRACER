@@ -29,29 +29,29 @@ const CATEGORY_STYLES: Record<
   { bg: string; text: string; border: string }
 > = {
   DEX: {
-    bg: "bg-[#A78BFA]/10",
-    text: "text-[#A78BFA]",
-    border: "border-[#A78BFA]/30",
+    bg: "bg-[#F4F4F4]",
+    text: "text-[#0D0D0D]",
+    border: "border-[#E5E7EB]",
   },
   CEX: {
-    bg: "bg-[#FBBF24]/10",
-    text: "text-[#FBBF24]",
-    border: "border-[#FBBF24]/30",
+    bg: "bg-[#F4F4F4]",
+    text: "text-[#0D0D0D]",
+    border: "border-[#E5E7EB]",
   },
   System: {
-    bg: "bg-[#34D399]/10",
-    text: "text-[#34D399]",
-    border: "border-[#34D399]/30",
+    bg: "bg-[#F4F4F4]",
+    text: "text-[#0D0D0D]",
+    border: "border-[#E5E7EB]",
   },
   Whale: {
-    bg: "bg-[#3B82F6]/10",
-    text: "text-[#3B82F6]",
-    border: "border-[#3B82F6]/30",
+    bg: "bg-[#F4F4F4]",
+    text: "text-[#0D0D0D]",
+    border: "border-[#E5E7EB]",
   },
   Unlabeled: {
-    bg: "bg-[#2A2C31]/40",
-    text: "text-[#9AA0AB]",
-    border: "border-[#2A2C31]",
+    bg: "bg-[#F8F9FA]",
+    text: "text-[#5D5D5D]",
+    border: "border-[#E5E7EB]",
   },
 };
 
@@ -75,136 +75,145 @@ export function CounterpartyTable({
   return (
     <div
       className={cn(
-        "w-full bg-[#17181B] border border-[#2A2C31] overflow-hidden my-3",
+        "w-full bg-[#FFFFFF] border border-[#E5E7EB] rounded-xl overflow-hidden my-3 shadow-xs",
         className
       )}
     >
       {/* Table Header */}
-      <div className="px-4 py-3 border-b border-[#2A2C31] flex flex-wrap items-center justify-between gap-2">
+      <div className="px-4 py-3 border-b border-[#E5E7EB] flex flex-wrap items-center justify-between gap-2 bg-[#F8F9FA]">
         <div className="flex items-center gap-2">
-          <span className="text-sm font-semibold text-[#F5F6F8] tracking-tight">
+          <span className="text-sm font-semibold text-[#0D0D0D]">
             {title}
           </span>
-          <span className="text-[11px] font-mono text-[#9AA0AB] px-2 py-0.5 rounded-full bg-[#2A2C31]/50">
+          <span className="text-[11px] font-mono text-[#5D5D5D] px-2 py-0.5 rounded-full bg-[#E5E7EB]/60">
             {counterparties.length} ranked
           </span>
         </div>
 
         {scannedTransactions && (
-          <div className="text-[11px] font-mono text-[#9AA0AB] flex items-center gap-1">
-            <span>Window:</span>
-            <span className="text-[#F5F6F8]">{formatNumber(scannedTransactions)} txs</span>
+          <div className="text-[11px] text-[#5D5D5D] font-mono">
+            Analyzed {scannedTransactions} transactions
           </div>
         )}
       </div>
 
-      {/* Counterparty List / Table */}
+      {/* Responsive Table Container */}
       <div className="overflow-x-auto">
-        <table className="w-full text-left border-collapse">
+        <table className="w-full text-left text-xs border-collapse">
           <thead>
-            <tr className="border-b border-[#2A2C31] text-[11px] uppercase tracking-wider text-[#9AA0AB] bg-[#0F1012]/40">
-              <th className="py-2.5 px-3 font-medium w-10 text-center">#</th>
-              <th className="py-2.5 px-3 font-medium">Address & Label</th>
-              <th className="py-2.5 px-3 font-medium">Category</th>
-              <th className="py-2.5 px-3 font-medium text-right">Frequency</th>
-              <th className="py-2.5 px-3 font-medium text-right">Total SOL</th>
-              <th className="py-2.5 px-3 font-medium w-24">Share</th>
+            <tr className="border-b border-[#E5E7EB] bg-[#FFFFFF] text-[11px] font-medium text-[#5D5D5D]">
+              <th className="px-3.5 py-2.5 w-10">#</th>
+              <th className="px-3.5 py-2.5">Address / Entity</th>
+              <th className="px-3.5 py-2.5">Category</th>
+              <th className="px-3.5 py-2.5 text-right">Transactions</th>
+              <th className="px-3.5 py-2.5 text-right">Total Volume</th>
+              <th className="px-3.5 py-2.5 w-24">Share</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-[#2A2C31]/60 text-xs">
-            {counterparties.map((item, index) => {
-              const categoryStyle = CATEGORY_STYLES[item.category] || CATEGORY_STYLES.Unlabeled;
-              const percent = item.percentage ?? Math.round((item.totalSol / maxTotalSol) * 100);
+          <tbody className="divide-y divide-[#F0F2F5]">
+            {counterparties.map((item, idx) => {
+              const catStyle = CATEGORY_STYLES[item.category] || CATEGORY_STYLES.Unlabeled;
+              const barWidth = Math.min(
+                100,
+                Math.max(4, (item.totalSol / maxTotalSol) * 100)
+              );
 
               return (
                 <tr
                   key={item.address}
-                  className="hover:bg-[#2A2A2D]/30 transition-colors group"
+                  className="hover:bg-[#F8F9FA] transition-colors group"
                 >
-                  {/* Rank */}
-                  <td className="py-3 px-3 text-center font-mono text-[#9AA0AB] text-[11px]">
-                    {index + 1}
+                  <td className="px-3.5 py-2.5 font-mono text-[11px] text-[#8F8F8F]">
+                    {idx + 1}
                   </td>
+                  <td className="px-3.5 py-2.5">
+                    <div className="flex items-center gap-2">
+                      {item.direction === "incoming" && (
+                        <ArrowDownLeft className="w-3.5 h-3.5 text-[#10B981] shrink-0" />
+                      )}
+                      {item.direction === "outgoing" && (
+                        <ArrowUpRight className="w-3.5 h-3.5 text-[#F59E0B] shrink-0" />
+                      )}
 
-                  {/* Address & Label */}
-                  <td className="py-3 px-3">
-                    <div className="flex flex-col">
-                      <div className="flex items-center gap-1.5">
+                      <div className="flex flex-col min-w-0">
+                        {item.label ? (
+                          <div className="flex items-center gap-1.5">
+                            <span className="font-semibold text-[#0D0D0D] truncate">
+                              {item.label}
+                            </span>
+                            <span className="font-mono text-[10px] text-[#8F8F8F]">
+                              ({shortenAddress(item.address, 3)})
+                            </span>
+                          </div>
+                        ) : (
+                          <span className="font-mono text-xs text-[#0D0D0D] font-medium">
+                            {shortenAddress(item.address, 4)}
+                          </span>
+                        )}
+                      </div>
+
+                      <div className="opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1 ml-auto">
                         <button
                           type="button"
                           onClick={() => handleCopy(item.address)}
-                          title="Click to copy address"
-                          className="font-mono text-xs text-[#F5F6F8] hover:text-[#3B82F6] transition-colors flex items-center gap-1 cursor-pointer"
+                          className="p-1 hover:bg-[#E5E7EB] rounded text-[#5D5D5D] hover:text-[#0D0D0D] transition-colors"
+                          title="Copy address"
                         >
-                          <span>{shortenAddress(item.address, 4)}</span>
                           {copiedAddress === item.address ? (
-                            <Check className="w-3 h-3 text-[#34D399]" />
+                            <Check className="w-3 h-3 text-[#10B981]" />
                           ) : (
-                            <Copy className="w-2.5 h-2.5 text-[#9AA0AB] opacity-0 group-hover:opacity-100 transition-opacity" />
+                            <Copy className="w-3 h-3" />
                           )}
                         </button>
                         <a
                           href={`https://solscan.io/account/${item.address}`}
                           target="_blank"
                           rel="noopener noreferrer"
+                          className="p-1 hover:bg-[#E5E7EB] rounded text-[#5D5D5D] hover:text-[#0D0D0D] transition-colors"
                           title="View on Solscan"
-                          className="text-[#9AA0AB] hover:text-[#3B82F6] opacity-0 group-hover:opacity-100 transition-opacity"
                         >
-                          <ExternalLink className="w-2.5 h-2.5" />
+                          <ExternalLink className="w-3 h-3" />
                         </a>
                       </div>
-                      {item.label && (
-                        <span className="text-[11px] text-[#9AA0AB] truncate max-w-[180px]">
-                          {item.label}
-                        </span>
-                      )}
                     </div>
                   </td>
 
-                  {/* Label / Badge */}
-                  <td className="py-3 px-3">
+                  <td className="px-3.5 py-2.5">
                     <span
                       className={cn(
-                        "inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-semibold tracking-wide border",
-                        categoryStyle.bg,
-                        categoryStyle.text,
-                        categoryStyle.border
+                        "px-2 py-0.5 rounded-full text-[10px] font-mono font-medium border",
+                        catStyle.bg,
+                        catStyle.text,
+                        catStyle.border
                       )}
                     >
-                      {item.direction === "incoming" && (
-                        <ArrowDownLeft className="w-2.5 h-2.5 text-[#34D399]" />
-                      )}
-                      {item.direction === "outgoing" && (
-                        <ArrowUpRight className="w-2.5 h-2.5 text-[#F472B6]" />
-                      )}
                       {item.category}
                     </span>
                   </td>
 
-                  {/* Frequency count */}
-                  <td className="py-3 px-3 text-right font-mono text-[#F5F6F8]">
-                    {formatNumber(item.frequency)}
-                    <span className="text-[10px] text-[#9AA0AB] ml-1">txs</span>
+                  <td className="px-3.5 py-2.5 text-right font-mono font-medium text-[#0D0D0D]">
+                    {item.frequency}
                   </td>
 
-                  {/* Total SOL */}
-                  <td className="py-3 px-3 text-right font-mono text-[#F5F6F8] font-medium">
-                    {formatNumber(item.totalSol, { maxDecimals: 3 })}
-                    <span className="text-[10px] text-[#9AA0AB] ml-1">SOL</span>
+                  <td className="px-3.5 py-2.5 text-right font-mono">
+                    <div className="font-medium text-[#0D0D0D]">
+                      {formatNumber(item.totalSol, { maxDecimals: 3 })} SOL
+                    </div>
                   </td>
 
-                  {/* Percentage bar */}
-                  <td className="py-3 px-3">
-                    <div className="w-full flex items-center gap-2">
-                      <div className="flex-1 bg-[#2A2C31] h-1.5 rounded-full overflow-hidden">
+                  <td className="px-3.5 py-2.5">
+                    <div className="flex items-center gap-2">
+                      <div className="w-16 h-1.5 bg-[#E5E7EB] rounded-full overflow-hidden">
                         <div
-                          className="bg-[#3B82F6] h-full rounded-full transition-all duration-300"
-                          style={{ width: `${Math.min(100, Math.max(5, percent))}%` }}
+                          className="h-full bg-[#0D0D0D] rounded-full"
+                          style={{ width: `${barWidth}%` }}
                         />
                       </div>
-                      <span className="font-mono text-[10px] text-[#9AA0AB] w-7 text-right">
-                        {percent}%
-                      </span>
+                      {item.percentage !== undefined && (
+                        <span className="text-[10px] font-mono text-[#5D5D5D]">
+                          {item.percentage}%
+                        </span>
+                      )}
                     </div>
                   </td>
                 </tr>
@@ -212,12 +221,6 @@ export function CounterpartyTable({
             })}
           </tbody>
         </table>
-      </div>
-
-      {/* Footer disclaimer / context */}
-      <div className="px-4 py-2 border-t border-[#2A2C31] bg-[#0F1012]/30 flex items-center justify-between text-[11px] text-[#9AA0AB]">
-        <span>Direction based on net post/pre balance changes</span>
-        <span className="font-mono">{counterparties.length} entries shown</span>
       </div>
     </div>
   );

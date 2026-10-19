@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { Search, Wallet, X, Check, ArrowRight, ShieldCheck } from "lucide-react";
+import { Search, Wallet, X, Check } from "lucide-react";
 import { shortenAddress, cn } from "@/lib/utils";
 
 interface WalletInputProps {
@@ -26,9 +26,8 @@ export function WalletInput({
     const cleanAddress = inputVal.trim();
     if (!cleanAddress) return;
 
-    // Simple Solana address check: base58 string 32-44 characters or .sol
     if (cleanAddress.length < 32 && !cleanAddress.endsWith(".sol")) {
-      setError("Please enter a valid Solana public key (32-44 chars) or .sol handle");
+      setError("Please enter a valid Solana public key (32-44 chars)");
       return;
     }
 
@@ -45,105 +44,55 @@ export function WalletInput({
 
   return (
     <div className={cn("w-full flex flex-col gap-2", className)}>
-      {/* Pinned active wallet pill */}
       {activeWallet && (
-        <div className="flex items-center justify-between px-3 py-1.5 bg-[#17181B] border border-[#2A2C31] text-xs">
+        <div className="flex items-center justify-between px-3.5 py-2 bg-[#F4F4F4] border border-[#E5E7EB] rounded-full text-xs">
           <div className="flex items-center gap-2 overflow-hidden">
-            <span className="flex h-2 w-2 relative">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#34D399] opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-[#34D399]"></span>
-            </span>
-            <span className="text-[#9AA0AB] uppercase tracking-wider text-[10px] font-semibold">
-              Target Wallet:
+            <span className="w-2 h-2 rounded-full bg-[#10B981]"></span>
+            <span className="text-[#5D5D5D] text-[11px] font-medium">
+              Target:
             </span>
             <button
               type="button"
               onClick={() => handleCopy(activeWallet)}
-              title="Click to copy full address"
-              className="font-mono text-[#F5F6F8] hover:text-[#3B82F6] transition-colors flex items-center gap-1.5 cursor-pointer"
+              className="font-mono text-xs text-[#0D0D0D] font-medium hover:underline flex items-center gap-1"
+              title="Click to copy address"
             >
               <span>{shortenAddress(activeWallet, 6)}</span>
-              {copied ? (
-                <Check className="w-3 h-3 text-[#34D399]" />
-              ) : (
-                <span className="text-[10px] text-[#9AA0AB] hover:underline font-sans">
-                  (copy)
-                </span>
-              )}
+              {copied && <Check className="w-3 h-3 text-[#10B981]" />}
             </button>
-            <span className="hidden sm:inline-flex items-center gap-1 text-[10px] text-[#9AA0AB] bg-[#2A2C31]/50 px-2 py-0.5 rounded-full">
-              <ShieldCheck className="w-2.5 h-2.5 text-[#3B82F6]" />
-              Pinned
-            </span>
           </div>
 
-          <div className="flex items-center gap-1">
-            {onClearWallet && (
-              <button
-                type="button"
-                onClick={onClearWallet}
-                className="rounded-full px-2 py-0.5 text-[11px] text-[#9AA0AB] hover:text-[#F5F6F8] hover:bg-[#2A2C31] transition-all flex items-center gap-1"
-                aria-label="Unpin wallet"
-              >
-                <X className="w-3 h-3" />
-                <span>Unpin</span>
-              </button>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* Sharp-cornered input bar with hairline border */}
-      <form onSubmit={handleSubmit} className="relative w-full">
-        <div className="flex items-center bg-[#17181B] border border-[#2A2C31] rounded-none focus-within:border-[#3B82F6] focus-within:ring-1 focus-within:ring-[#3B82F6] transition-all duration-150">
-          <div className="pl-3.5 pr-2 text-[#9AA0AB]">
-            <Search className="w-4 h-4 text-[#9AA0AB]" />
-          </div>
-
-          <input
-            type="text"
-            value={inputVal}
-            onChange={(e) => {
-              setInputVal(e.target.value);
-              if (error) setError(null);
-            }}
-            placeholder={
-              activeWallet
-                ? "Switch target address... (e.g. 5tzFki..., JUP6Lk..., or .sol)"
-                : "Enter Solana wallet address to trace (e.g. 5tzFki..., JUP6Lk..., or your wallet)"
-            }
-            className="w-full bg-transparent py-3 pr-2 text-sm text-[#F5F6F8] placeholder-[#9AA0AB]/60 rounded-none focus:outline-none font-mono"
-            aria-label="Solana wallet search"
-          />
-
-          {inputVal && (
+          {onClearWallet && (
             <button
               type="button"
-              onClick={() => setInputVal("")}
-              className="p-1.5 mr-1 text-[#9AA0AB] hover:text-[#F5F6F8] transition-colors"
-              aria-label="Clear input"
+              onClick={onClearWallet}
+              className="p-1 text-[#8F8F8F] hover:text-[#0D0D0D] hover:bg-[#E5E7EB] rounded-full transition-colors"
+              title="Clear target address"
             >
               <X className="w-3.5 h-3.5" />
             </button>
           )}
-
-          {/* Pill submit button */}
-          <div className="pr-2 py-1.5 flex items-center">
-            <button
-              type="submit"
-              disabled={!inputVal.trim()}
-              className="rounded-full bg-[#3B82F6] hover:bg-[#2563EB] disabled:opacity-40 disabled:hover:bg-[#3B82F6] text-white text-xs font-medium px-4 py-1.5 flex items-center gap-1.5 transition-colors cursor-pointer disabled:cursor-not-allowed shadow-sm shrink-0"
-            >
-              <span>{activeWallet ? "Switch" : "Analyze"}</span>
-              <ArrowRight className="w-3 h-3" />
-            </button>
-          </div>
         </div>
+      )}
 
-        {error && (
-          <p className="mt-1 text-xs text-[#F472B6] font-mono tracking-tight">{error}</p>
-        )}
+      <form onSubmit={handleSubmit} className="relative flex items-center">
+        <input
+          type="text"
+          value={inputVal}
+          onChange={(e) => setInputVal(e.target.value)}
+          placeholder="Paste Solana wallet address or .sol domain..."
+          className="w-full bg-[#FFFFFF] border border-[#E5E7EB] text-[#0D0D0D] placeholder-[#8F8F8F] text-xs font-mono px-3.5 py-2.5 rounded-full pr-10 focus:outline-none focus:border-[#0D0D0D]"
+        />
+        <button
+          type="submit"
+          className="absolute right-1.5 p-1.5 rounded-full bg-[#0D0D0D] text-white hover:bg-[#262626] transition-colors"
+          title="Set wallet"
+        >
+          <Search className="w-3.5 h-3.5" />
+        </button>
       </form>
+
+      {error && <p className="text-[11px] text-[#EF4444] px-2">{error}</p>}
     </div>
   );
 }

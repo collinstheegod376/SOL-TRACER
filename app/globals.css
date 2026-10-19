@@ -1,0 +1,82 @@
+@import url('https://fonts.googleapis.com/css2?family=Geist+Mono:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --canvas: #0F1012;
+    --surface: #17181B;
+    --surface-raised: #2A2A2D;
+    --hairline: #2A2C31;
+    --ink: #F5F6F8;
+    --body: #9AA0AB;
+    --primary: #3B82F6;
+    --primary-hover: #2563EB;
+    --accent: #F472B6;
+    --accent-gold: #FBBF24;
+    --accent-green: #34D399;
+    --accent-purple: #A78BFA;
+  }
+
+  * {
+    box-sizing: border-box;
+  }
+
+  body {
+    background-color: #0F1012;
+    color: #F5F6F8;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    min-height: 100vh;
+  }
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #0F1012;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #2A2C31;
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #3B82F6;
+}
+
+/* Typography Utility Classes */
+.font-mono-numbers {
+  font-family: 'Geist Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-feature-settings: 'tnum' on, 'zero' on;
+}
+
+.heading-display {
+  font-family: 'Inter', sans-serif;
+  letter-spacing: -1.2px;
+}
+
+.heading-sub {
+  font-family: 'Inter', sans-serif;
+  letter-spacing: -0.48px;
+}
+
+.border-hairline {
+  border-color: #2A2C31;
+}
+
+.border-b-hairline {
+  border-bottom-color: #2A2C31;
+}
+
+.border-t-hairline {
+  border-top-color: #2A2C31;
+}

@@ -1,0 +1,30 @@
+# SolTrace
+
+> Conversational AI Solana On-Chain Transaction Scanner and Forensics Engine.
+
+SolTrace is an open-source tool designed to make Solana blockchain analysis intuitive and accessible without wading through dense, raw transaction logs or confusing hex instructions. Users can explore wallets, analyze token movements, audit drainer risks, and inspect DEX swaps using natural language.
+
+- **Developer**: promisedkillua (https://www.promisedkillua.sbs/)
+- **Live Application**: https://soltracer.vercel.app/
+- **Repository**: https://github.com/collinstheegod376/SOL-TRACER
+- **License**: MIT
+
+## Core Capabilities
+
+- **Natural Language Blockchain Forensics**: Ask questions in plain English (e.g., "Who transfers the most SOL into this wallet?", "Did this address sell tokens recently?").
+- **Visual Money Flow Diagrams**: Generates 3-column flow charts showing Inbound Senders -> Target Wallet -> Outbound Recipients with exact SOL and SPL token volumes.
+- **Wallet Security & Drainer Risk Audit**: Evaluates program ownership, delegated token spend approvals, phishing voucher tokens, and transaction error ratios to output a 0-100% Safety Score.
+- **DEX Swap & Trading History Tracker**: Decodes on-chain swaps across Raydium, Jupiter, Orca Whirlpool, Meteora DLMM, and Pump.fun into buy/sell tables with Solscan verification proofs.
+- **Multi-Hop "Follow the Money" Tracer**: Recursively traces outbound transfers 2-3 hops deep to identify terminal Centralized Exchange (CEX) deposit accounts (Binance, Coinbase, Kraken, Bybit).
+- **Zero Configuration & Privacy**: No wallet connection required to inspect accounts; operates via public Solana RPC nodes and Groq reasoning.
+
+## API Endpoints
+
+- `POST /api/chat`: Accepts `{ message: string, walletAddress?: string, history?: Array<{ role: string, content: string }> }`. Returns structured blockchain intelligence, classified tool calls, and natural language explanations.
+- `GET /api/tools`: Lists available internal analytics and RPC tools with parameter schemas.
+
+## Related Links
+
+- [Full LLM Documentation](https://soltracer.vercel.app/llms-full.txt)
+- [Developer Portfolio](https://www.promisedkillua.sbs/)
+- [GitHub Source Code](https://github.com/collinstheegod376/SOL-TRACER)

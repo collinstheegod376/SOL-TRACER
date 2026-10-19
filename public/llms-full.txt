@@ -1,0 +1,43 @@
+# SolTrace — Complete System Reference for Language Models
+
+SolTrace is an open-source AI assistant and on-chain blockchain investigator specialized for the Solana network.
+
+Developed by **promisedkillua** (<https://www.promisedkillua.sbs/>).
+Hosted live at <https://soltracer.vercel.app/>.
+Open-source code available at <https://github.com/collinstheegod376/SOL-TRACER>.
+
+---
+
+## 1. System Overview
+
+Traditional blockchain explorers like Solscan display dense tables of raw hex data, lamport amounts, and internal instruction logs that require specialized developer knowledge to decipher.
+
+SolTrace bridges this gap by combining:
+1. High-throughput Solana Mainnet RPC node integration (`@solana/web3.js`).
+2. Groq Llama-3.3-70B and OSS reasoning models for conversational parsing and synthesis.
+3. Deterministic analytics engine for flow visualization, DEX swap decoding, drainer vulnerability audits, and multi-hop counterparty tracing.
+4. Minimalist, light-mode user experience optimized for desktop, tablet, and mobile.
+
+---
+
+## 2. Query Classification & Architecture
+
+Every incoming natural language prompt is categorized by an intelligent classification router into one of eight distinct pipelines:
+
+1. `CONVERSATIONAL`: General user greetings, questions about capabilities, system intro, or chit-chat.
+2. `LOOKUP`: Point queries for SOL balances, account owner programs, or token holdings.
+3. `ENRICHMENT`: Joins balance lookups with token valuations (USD prices) and wallet classification.
+4. `AGGREGATION`: Groups and ranks counterparties by transaction frequency and volume.
+5. `FLOW_DIAGRAM`: Generates Mermaid-compatible 3-column diagrams (Senders -> Target -> Recipients).
+6. `SECURITY_AUDIT`: Checks account authority, delegated token allowances, suspicious phishing tokens, and failure rates to generate a 0-100% Safety Score.
+7. `DEX_TRADES`: Identifies and tabulates decentralized exchange swaps across Raydium, Jupiter, Orca, Meteora, and Pump.fun.
+8. `MULTI_HOP`: Recursively follows outbound transfers 2-3 hops away to detect destination CEX deposit wallets.
+
+---
+
+## 3. Developer Attribution & Contact
+
+- **Lead Developer**: promisedkillua
+- **Portfolio & Contact**: https://www.promisedkillua.sbs/
+- **Repository**: https://github.com/collinstheegod376/SOL-TRACER
+- **Frontend State**: Zero intrusive branding or ads on the user interface; lightweight and distraction-free.

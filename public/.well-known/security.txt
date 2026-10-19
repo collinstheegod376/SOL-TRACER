@@ -1,0 +1,5 @@
+Contact: https://www.promisedkillua.sbs/
+Canonical: https://soltracer.vercel.app/.well-known/security.txt
+Preferred-Languages: en
+Policy: https://github.com/collinstheegod376/SOL-TRACER
+Acknowledgments: https://github.com/collinstheegod376/SOL-TRACER

@@ -1,0 +1,12 @@
+/* TEAM */
+Developer: promisedkillua
+Site: https://www.promisedkillua.sbs/
+GitHub: https://github.com/collinstheegod376
+
+/* SITE */
+Project: SolTrace
+Live URL: https://soltracer.vercel.app/
+Repository: https://github.com/collinstheegod376/SOL-TRACER
+Language: TypeScript
+Standards: HTML5, CSS3, Schema.org
+Software: Next.js, React, Tailwind CSS, Solana Web3.js, Groq AI

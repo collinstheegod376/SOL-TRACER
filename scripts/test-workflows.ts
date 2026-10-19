@@ -12,7 +12,7 @@
 import { executeOrchestrator, classifyQuery } from '../lib/orchestrator';
 import { mcpClient } from '../lib/mcp-client';
 import { SAMPLE_WALLET_ADDRESS } from '../lib/mock-data';
-import { labelAddress, formatAddress, KNOWN_LABELS } from '../lib/analytics-engine';
+import { labelAddress, formatAddress, KNOWN_LABELS, parseDexSwaps } from '../lib/analytics-engine';
 
 interface TestResult {
   scenario: string;
@@ -287,6 +287,43 @@ async function main() {
     assert(secRes.classification === 'SECURITY_AUDIT', `Expected SECURITY_AUDIT, got ${secRes.classification}`);
     assert(secRes.answer.includes('Safety Score'), 'Answer should cite safety score');
     assert(secRes.structuredData?.audit?.score !== undefined, 'Audit score should be defined');
+    assert(secRes.structuredData?.audit?.targetType === 'wallet', 'Target should be recognized as wallet');
+  });
+
+  await runTest('Scenario 6', 'Token Mint Contract Rug Risk Audit (Discrimination from Wallet)', async () => {
+    const mintRes = await executeOrchestrator({
+      walletAddress: 'Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB', // USDT Mint
+      message: 'audit security and check for rug pull risks',
+    });
+    assert(mintRes.classification === 'SECURITY_AUDIT', `Expected SECURITY_AUDIT, got ${mintRes.classification}`);
+    assert(mintRes.structuredData?.audit?.targetType === 'token_mint', `Expected token_mint, got ${mintRes.structuredData?.audit?.targetType}`);
+    assert(mintRes.answer.includes('Token Mint'), 'Answer must explicitly state target is an SPL Token Mint');
+    assert(mintRes.answer.includes('Mint Authority'), 'Audit must evaluate Mint Authority');
+    assert(mintRes.answer.includes('Freeze Authority'), 'Audit must evaluate Freeze Authority');
+  });
+
+  await runTest('Scenario 6', 'DEX Swap Real Amount Calculations (No 0.5 SOL Placeholders)', async () => {
+    const mockSwapTx = {
+      signature: '5xTestSwapSig1111111111111111111111111111111111111111111111111111111111111111111111111111',
+      account_keys: [SAMPLE_WALLET_ADDRESS, '675kPX9MHTjS2zt1qfr1NYHuzeLXfQM9H24wFSUt1Mp8'],
+      pre_balances: [15000000000, 1000000000],
+      post_balances: [12500000000, 3500000000], // Exactly 2.5 SOL spent!
+      token_transfers: [
+        {
+          mint: 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v',
+          symbol: 'USDC',
+          amount: 385.5,
+          direction: 'incoming',
+          counterparty: '675kPX9MHTjS2zt1qfr1NYHuzeLXfQM9H24wFSUt1Mp8',
+        },
+      ],
+    };
+    const swaps = parseDexSwaps([mockSwapTx], SAMPLE_WALLET_ADDRESS);
+    assert(swaps.length === 1, 'Should decode 1 swap');
+    assert(swaps[0].inAmount === 2.5, `Expected 2.5 SOL, got ${swaps[0].inAmount}`);
+    assert(swaps[0].inToken === 'SOL', `Expected inToken SOL, got ${swaps[0].inToken}`);
+    assert(swaps[0].outAmount === 385.5, `Expected 385.5 USDC, got ${swaps[0].outAmount}`);
+    assert(swaps[0].outToken === 'USDC', `Expected outToken USDC, got ${swaps[0].outToken}`);
   });
 
   // ============================================================================

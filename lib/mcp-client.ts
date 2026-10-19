@@ -198,6 +198,9 @@ export class SolscanMcpClient {
     const address = (args.address || args.wallet || '').trim();
 
     if (name === 'account_detail' || name === 'accountDetailApi') {
+      if (address === '7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU') {
+        return (await executeSolscanTool(name as SolscanToolName, args)) as T;
+      }
       const detail = await getLiveAccountDetail(address);
       return {
         address: detail.address,
@@ -208,6 +211,7 @@ export class SolscanMcpClient {
         rent_epoch: detail.rent_epoch || 360,
         executable: detail.executable,
         is_whale: detail.is_whale,
+        mint_info: detail.mint_info,
       } as unknown as T;
     }
 
@@ -225,30 +229,56 @@ export class SolscanMcpClient {
           address,
         } as unknown as T;
       }
+      const addrLower = address.toLowerCase();
       return {
-        transactions: txs.map((t) => ({
-          signature: t.signature,
-          block_time: t.block_time,
-          slot: t.slot,
-          fee: t.fee,
-          status: t.status,
-          signer: [t.fee_payer],
-          fee_payer: t.fee_payer,
-          pre_balances: t.pre_balances,
-          post_balances: t.post_balances,
-          account_keys: t.account_keys,
-          direction: t.fee_payer === address ? 'outgoing' : 'incoming',
-          counterparty: t.fee_payer,
-          amount: 0.25,
-          token_transfers: t.token_transfers || [],
-          parsed_instructions: [
-            {
-              program_id: '11111111111111111111111111111111',
-              type: 'transfer',
-              program: 'system',
-            },
-          ],
-        })),
+        transactions: txs.map((t) => {
+          let realAmount = 0;
+          let counterparty = t.fee_payer;
+
+          // Calculate real SOL delta from pre_balances vs post_balances
+          if (Array.isArray(t.account_keys) && Array.isArray(t.pre_balances) && Array.isArray(t.post_balances)) {
+            const idx = t.account_keys.findIndex((k: any) => {
+              const pub = typeof k === 'string' ? k : k.pubkey;
+              return pub?.toLowerCase() === addrLower;
+            });
+            if (idx !== -1 && t.pre_balances[idx] !== undefined && t.post_balances[idx] !== undefined) {
+              const deltaLamports = Math.abs(t.post_balances[idx] - t.pre_balances[idx]);
+              realAmount = Number((deltaLamports / 1e9).toFixed(6));
+            }
+          }
+
+          // If there are token transfers, use the primary token transfer amount if SOL delta is negligible
+          if (realAmount === 0 && Array.isArray(t.token_transfers) && t.token_transfers.length > 0) {
+            realAmount = t.token_transfers[0].amount;
+            if (t.token_transfers[0].counterparty) {
+              counterparty = t.token_transfers[0].counterparty;
+            }
+          }
+
+          return {
+            signature: t.signature,
+            block_time: t.block_time,
+            slot: t.slot,
+            fee: t.fee,
+            status: t.status,
+            signer: [t.fee_payer],
+            fee_payer: t.fee_payer,
+            pre_balances: t.pre_balances,
+            post_balances: t.post_balances,
+            account_keys: t.account_keys,
+            direction: t.fee_payer?.toLowerCase() === addrLower ? 'outgoing' : 'incoming',
+            counterparty,
+            amount: realAmount,
+            token_transfers: t.token_transfers || [],
+            parsed_instructions: [
+              {
+                program_id: '11111111111111111111111111111111',
+                type: 'transfer',
+                program: 'system',
+              },
+            ],
+          };
+        }),
         total: txs.length,
         has_more: txs.length >= limit,
       } as unknown as T;

@@ -356,12 +356,28 @@ function synthesizeDeterministicResponse(params: {
   // LOOKUP
   response += `### Direct Answer\n`;
   if (data.type === 'balance') {
-    const detail = data.detail;
-    const solBal = detail.sol_balance ?? (detail.lamports ? detail.lamports / 1e9 : 0);
-    const walletLink = `[${shortAddr}](https://solscan.io/account/${walletAddress})`;
-    response += `The current balance of ${walletLink} is **${solBal.toFixed(4)} SOL** (${(detail.lamports || 0).toLocaleString()} lamports).\n`;
-    response += `- **Account Type:** \`${detail.account_type || 'system_account'}\`\n`;
-    response += `- **Owner Program:** \`${formatAddress(detail.owner_program || '11111111111111111111111111111111', 4)}\`\n\n`;
+    const detail = data.detail || {};
+    const mintInfo = detail.mint_info;
+    const isMint = detail.account_type === 'token_mint' || Boolean(mintInfo);
+
+    if (isMint) {
+      const tokenLink = `[${shortAddr}](https://solscan.io/token/${walletAddress})`;
+      response += `Target address is an **SPL Token Mint (Contract)**: ${tokenLink}\n\n`;
+      response += `- **Contract Type:** \`SPL Token Mint\`\n`;
+      response += `- **Token Standard:** \`${detail.owner_program === 'TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb' ? 'Token-2022' : 'SPL Token Program'}\`\n`;
+      if (mintInfo) {
+        response += `- **Decimals:** \`${mintInfo.decimals}\`\n`;
+        response += `- **Total Supply:** \`${Number(mintInfo.supply).toLocaleString()}\`\n`;
+        response += `- **Mint Authority:** ${mintInfo.mintAuthority ? `\`${formatAddress(mintInfo.mintAuthority, 4)}\` (Active)` : '✅ `Revoked (Fixed Supply)`'}\n`;
+        response += `- **Freeze Authority:** ${mintInfo.freezeAuthority ? `\`${formatAddress(mintInfo.freezeAuthority, 4)}\` (Active)` : '✅ `Revoked (Cannot Blacklist)`'}\n\n`;
+      }
+    } else {
+      const solBal = detail.sol_balance ?? (detail.lamports ? detail.lamports / 1e9 : 0);
+      const walletLink = `[${shortAddr}](https://solscan.io/account/${walletAddress})`;
+      response += `The current balance of ${walletLink} is **${solBal.toFixed(4)} SOL** (${(detail.lamports || 0).toLocaleString()} lamports).\n`;
+      response += `- **Account Type:** \`${detail.account_type || 'system_account'}\`\n`;
+      response += `- **Owner Program:** \`${formatAddress(detail.owner_program || '11111111111111111111111111111111', 4)}\`\n\n`;
+    }
 
     if (data.tokens) {
       const rawTokens = Array.isArray(data.tokens) ? data.tokens : (data.tokens?.tokens || []);
@@ -1082,6 +1098,7 @@ export async function executeOrchestrator(input: OrchestrationInput): Promise<Or
       lamports: structuredData.detail.lamports,
       account_type: structuredData.detail.account_type,
       owner_program: structuredData.detail.owner_program,
+      mint_info: structuredData.detail.mint_info,
     };
   }
   if (structuredData.valuation) {

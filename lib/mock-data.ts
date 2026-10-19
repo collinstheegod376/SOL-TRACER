@@ -16,12 +16,19 @@ export interface AccountDetail {
   address: string;
   lamports: number;
   sol_balance: number;
-  account_type: 'system_account' | 'token_account' | 'program_account';
+  account_type: 'system_account' | 'token_account' | 'program_account' | 'token_mint' | 'program' | string;
   owner_program: string;
   executable: boolean;
   rent_epoch: number;
   is_whale: boolean;
   usd_value?: number;
+  mint_info?: {
+    decimals: number;
+    supply: string;
+    mintAuthority: string | null;
+    freezeAuthority: string | null;
+    isInitialized: boolean;
+  };
 }
 
 export interface TokenMetadata {
@@ -184,6 +191,29 @@ export const KNOWN_TOKENS: Record<string, { meta: TokenMetadata; price: TokenPri
       price_change_24h: 0.01,
       volume_24h_usd: 1250400000,
       market_cap_usd: 35000000000,
+      updated_at: 1792194000,
+    },
+  },
+  // USDT
+  'Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB': {
+    meta: {
+      address: 'Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB',
+      name: 'Tether USD',
+      symbol: 'USDT',
+      decimals: 6,
+      icon: 'https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB/logo.png',
+      website: 'https://tether.to',
+      coingecko_id: 'tether',
+      supply: 890000000,
+      holder_count: 1950000,
+    },
+    price: {
+      address: 'Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB',
+      symbol: 'USDT',
+      price_usd: 1.0002,
+      price_change_24h: 0.02,
+      volume_24h_usd: 980000000,
+      market_cap_usd: 890000000,
       updated_at: 1792194000,
     },
   },
@@ -785,6 +815,47 @@ export const MOCK_DEFI_ACTIVITIES: DefiActivity[] = [
 export function getMockAccountDetail(address: string): AccountDetail {
   if (address === SAMPLE_WALLET_ADDRESS) {
     return MOCK_SAMPLE_WALLET_DETAIL;
+  }
+  // Check known token mints (USDT, USDC, BONK, JUP, RAY)
+  if (KNOWN_TOKENS[address]) {
+    const meta = KNOWN_TOKENS[address].meta;
+    return {
+      address,
+      lamports: 0,
+      sol_balance: 0,
+      account_type: 'token_mint',
+      owner_program: TOKEN_PROGRAM_ID,
+      executable: false,
+      rent_epoch: 361,
+      is_whale: false,
+      mint_info: {
+        decimals: meta.decimals,
+        supply: String(meta.supply || '1000000000'),
+        mintAuthority: null, // Reputable tokens have revoked mint authority
+        freezeAuthority: address === 'Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB' || address === 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v'
+          ? '2wmVCSFeAggT9v62aqRqSochS3LXu1zPTHQH4EPfZBLm'
+          : null,
+        isInitialized: true,
+      },
+    };
+  }
+  // Check known programs
+  if (
+    address === '675kPX9MHTjS2zt1qfr1NYHuzeLXfQM9H24wFSUt1Mp8' ||
+    address === 'JUP6LkbZbjS1jKKwapdHNy74zcZ3tLUZoi5QNyVTaV4' ||
+    address === 'whirLbMiicVdio4qvUfM5KAg6Ct8VwpYzGff3uctyCc' ||
+    address === 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA'
+  ) {
+    return {
+      address,
+      lamports: 1000000000,
+      sol_balance: 1.0,
+      account_type: 'program',
+      owner_program: 'BPFLoader2111111111111111111111111111111111',
+      executable: true,
+      rent_epoch: 361,
+      is_whale: false,
+    };
   }
   // Check known counterparties
   if (KNOWN_ADDRESSES[address]) {

@@ -654,7 +654,7 @@ export interface DexSwapEvent {
 }
 
 /**
- * Decode decentralized exchange (DEX) swaps from transaction records
+ * Decode decentralized exchange (DEX) swaps from transaction records with real calculated amounts
  */
 export function parseDexSwaps(transactions: any[], walletAddress: string): DexSwapEvent[] {
   const swaps: DexSwapEvent[] = [];
@@ -687,6 +687,20 @@ export function parseDexSwaps(transactions: any[], walletAddress: string): DexSw
     if (!detectedDex && !tx.is_swap) continue;
     detectedDex = detectedDex || 'Solana DEX';
 
+    // Calculate real SOL balance delta for this wallet
+    let solDelta = 0;
+    if (Array.isArray(tx.account_keys) && Array.isArray(tx.pre_balances) && Array.isArray(tx.post_balances)) {
+      const idx = tx.account_keys.findIndex((k: any) => {
+        const pub = typeof k === 'string' ? k : k.pubkey;
+        return pub?.toLowerCase() === walletLower;
+      });
+      if (idx !== -1 && tx.pre_balances[idx] !== undefined && tx.post_balances[idx] !== undefined) {
+        solDelta = (tx.post_balances[idx] - tx.pre_balances[idx]) / 1e9;
+      }
+    } else if (typeof tx.amount === 'number' && tx.amount > 0) {
+      solDelta = tx.direction === 'incoming' ? tx.amount : -tx.amount;
+    }
+
     // Decode token changes
     const tokenTransfers = tx.token_transfers || [];
     let inToken = 'SOL';
@@ -702,18 +716,44 @@ export function parseDexSwaps(transactions: any[], walletAddress: string): DexSw
       inAmount = outTokens[0].amount;
       outToken = inTokens[0].symbol;
       outAmount = inTokens[0].amount;
+    } else if (inTokens.length > 0) {
+      // User received token, paid in SOL
+      const token = inTokens[0];
+      outToken = token.symbol;
+      outAmount = token.amount;
+      inToken = 'SOL';
+      inAmount = Math.abs(solDelta) > 0 ? Math.abs(solDelta) : (tx.amount || 0);
+    } else if (outTokens.length > 0) {
+      // User sold token, received SOL
+      const token = outTokens[0];
+      inToken = token.symbol;
+      inAmount = token.amount;
+      outToken = 'SOL';
+      outAmount = solDelta > 0 ? solDelta : (Math.abs(solDelta) > 0 ? Math.abs(solDelta) : (tx.amount || 0));
     } else if (tokenTransfers.length > 0) {
       const t = tokenTransfers[0];
       if (t.direction === 'incoming') {
         inToken = 'SOL';
-        inAmount = 0.5;
+        inAmount = Math.abs(solDelta) > 0 ? Math.abs(solDelta) : (tx.amount || 0);
         outToken = t.symbol;
         outAmount = t.amount;
       } else {
         inToken = t.symbol;
         inAmount = t.amount;
         outToken = 'SOL';
-        outAmount = 0.5;
+        outAmount = solDelta > 0 ? solDelta : (Math.abs(solDelta) > 0 ? Math.abs(solDelta) : (tx.amount || 0));
+      }
+    } else if (Math.abs(solDelta) > 0) {
+      if (solDelta < 0) {
+        inToken = 'SOL';
+        inAmount = Math.abs(solDelta);
+        outToken = 'SPL';
+        outAmount = 0;
+      } else {
+        inToken = 'SPL';
+        inAmount = 0;
+        outToken = 'SOL';
+        outAmount = solDelta;
       }
     }
 
@@ -757,6 +797,8 @@ export interface SecurityAuditResult {
   score: number; // 0 - 100
   rating: 'Clean' | 'Low Risk' | 'Moderate Risk' | 'Critical Risk';
   summary: string;
+  isTokenMint?: boolean;
+  targetType: 'wallet' | 'token_mint' | 'program';
   checks: Array<{
     category: string;
     status: 'PASS' | 'WARN' | 'FAIL';
@@ -764,6 +806,112 @@ export interface SecurityAuditResult {
   }>;
   flaggedTokens: string[];
   unlimitedApprovals: number;
+  tokenMintDetails?: {
+    decimals: number;
+    supply: string;
+    mintAuthority: string | null;
+    freezeAuthority: string | null;
+  };
+}
+
+/**
+ * Audit SPL Token Mint contracts for rug pull, mint inflation, and honeypot freeze risks
+ */
+export function auditTokenMintContract(
+  accountDetail: any,
+  transactions: any[] = []
+): SecurityAuditResult {
+  const checks: Array<{ category: string; status: 'PASS' | 'WARN' | 'FAIL'; detail: string }> = [];
+  let score = 100;
+  const mintInfo = accountDetail?.mint_info || {};
+
+  // 1. Mint Authority (Supply Inflation / Rug Pull Risk)
+  const mintAuth = mintInfo.mintAuthority;
+  if (!mintAuth) {
+    checks.push({
+      category: 'Mint Authority (Supply Cap)',
+      status: 'PASS',
+      detail: 'Mint authority is **REVOKED** (`null`). Creator cannot print new tokens or dilute circulating supply.',
+    });
+  } else {
+    score -= 45;
+    checks.push({
+      category: 'Mint Authority (Supply Cap)',
+      status: 'FAIL',
+      detail: `Mint authority is **ACTIVE** (\`${formatAddress(mintAuth, 4)}\`). High rug risk: deployer can mint unlimited tokens and dump on holders.`,
+    });
+  }
+
+  // 2. Freeze Authority (Blacklist / Honeypot Risk)
+  const freezeAuth = mintInfo.freezeAuthority;
+  if (!freezeAuth) {
+    checks.push({
+      category: 'Freeze Authority (Honeypot)',
+      status: 'PASS',
+      detail: 'Freeze authority is **REVOKED** (`null`). Holders cannot be frozen or blacklisted from transferring/selling tokens.',
+    });
+  } else {
+    score -= 35;
+    checks.push({
+      category: 'Freeze Authority (Honeypot)',
+      status: 'WARN',
+      detail: `Freeze authority is **ACTIVE** (\`${formatAddress(freezeAuth, 4)}\`). Honeypot risk: contract deployer can freeze holder token accounts.`,
+    });
+  }
+
+  // 3. Contract Program Standard
+  const isToken2022 = accountDetail?.owner_program === 'TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb';
+  if (isToken2022) {
+    checks.push({
+      category: 'Contract Standard',
+      status: 'WARN',
+      detail: 'Token-2022 standard detected. Inspect transfer fees and custom extension hooks.',
+    });
+  } else {
+    checks.push({
+      category: 'Contract Standard',
+      status: 'PASS',
+      detail: 'Standard SPL Token Program (`Tokenkeg...`). Established immutable runtime.',
+    });
+  }
+
+  // 4. Decimals and Supply
+  const decimals = mintInfo.decimals ?? accountDetail?.decimals ?? 6;
+  const supply = mintInfo.supply ?? 'N/A';
+  checks.push({
+    category: 'Supply & Decimals',
+    status: 'PASS',
+    detail: `Supply: **${supply}** base units with **${decimals} decimals**.`,
+  });
+
+  score = Math.max(0, Math.min(100, score));
+  let rating: SecurityAuditResult['rating'] = 'Clean';
+  if (score < 50) rating = 'Critical Risk';
+  else if (score < 75) rating = 'Moderate Risk';
+  else if (score < 90) rating = 'Low Risk';
+
+  const summary = score >= 90
+    ? 'This SPL Token Mint has revoked both mint and freeze authorities, demonstrating strong anti-rug pull architecture.'
+    : score >= 60
+    ? 'This token has active authorities (e.g. freeze or custom extensions) that pose potential risks for holders.'
+    : 'CRITICAL RUG RISK! Active mint authority allows deployers to inflate supply and dump on holders.';
+
+  return {
+    score,
+    rating,
+    summary,
+    isTokenMint: true,
+    targetType: 'token_mint',
+    checks,
+    flaggedTokens: [],
+    unlimitedApprovals: 0,
+    tokenMintDetails: {
+      decimals,
+      supply,
+      mintAuthority: mintAuth,
+      freezeAuthority: freezeAuth,
+    },
+  };
 }
 
 /**
@@ -774,6 +922,16 @@ export function auditWalletSecurity(
   tokenAccounts: any[] = [],
   transactions: any[] = []
 ): SecurityAuditResult {
+  // If target is a token mint, run token contract audit rather than user wallet audit
+  const isMint =
+    accountDetail?.account_type === 'token_mint' ||
+    Boolean(accountDetail?.mint_info) ||
+    (accountDetail?.owner_program === 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA' && (accountDetail?.data_size === 82 || accountDetail?.decimals !== undefined));
+
+  if (isMint) {
+    return auditTokenMintContract(accountDetail, transactions);
+  }
+
   const checks: Array<{ category: string; status: 'PASS' | 'WARN' | 'FAIL'; detail: string }> = [];
   let score = 100;
   const flaggedTokens: string[] = [];
@@ -886,18 +1044,37 @@ export function auditWalletSecurity(
     score,
     rating,
     summary,
+    targetType: 'wallet',
     checks,
     flaggedTokens,
     unlimitedApprovals,
   };
 }
 
-export function formatSecurityAuditReport(audit: SecurityAuditResult, walletAddress: string): string {
-  const shortAddr = formatAddress(walletAddress, 4);
+export function formatSecurityAuditReport(audit: SecurityAuditResult, address: string): string {
+  const shortAddr = formatAddress(address, 4);
   const badgeColor =
     audit.score >= 90 ? '🟢' : audit.score >= 70 ? '🟡' : '🔴';
 
-  let md = `### Wallet Security & Threat Audit: [${shortAddr}](https://solscan.io/account/${walletAddress})\n\n`;
+  if (audit.isTokenMint || audit.targetType === 'token_mint') {
+    let md = `### Token Mint & Smart Contract Audit: [${shortAddr}](https://solscan.io/token/${address})\n\n`;
+    md += `*Target is an **SPL Token Mint contract**, not an individual user wallet.*\n\n`;
+    md += `**Contract Safety Score:** ${badgeColor} **${audit.score}/100** (\`${audit.rating}\`)\n\n`;
+    md += `**Summary:** ${audit.summary}\n\n`;
+
+    md += `| Security Check | Status | Diagnostic Finding |\n`;
+    md += `| :--- | :---: | :--- |\n`;
+
+    for (const c of audit.checks) {
+      const sBadge =
+        c.status === 'PASS' ? '✅ `PASS`' : c.status === 'WARN' ? '⚠️ `WARN`' : '🚨 `FAIL`';
+      md += `| **${c.category}** | ${sBadge} | ${c.detail} |\n`;
+    }
+
+    return md;
+  }
+
+  let md = `### Wallet Security & Threat Audit: [${shortAddr}](https://solscan.io/account/${address})\n\n`;
   md += `**Safety Score:** ${badgeColor} **${audit.score}/100** (\`${audit.rating}\`)\n\n`;
   md += `**Summary:** ${audit.summary}\n\n`;
 

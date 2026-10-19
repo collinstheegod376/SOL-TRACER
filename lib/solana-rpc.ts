@@ -5,6 +5,14 @@
  * to guarantee 100% real on-chain data for any wallet entered by the user.
  */
 
+export interface LiveMintInfo {
+  decimals: number;
+  supply: string;
+  mintAuthority: string | null;
+  freezeAuthority: string | null;
+  isInitialized: boolean;
+}
+
 export interface LiveAccountDetail {
   address: string;
   sol_balance: number;
@@ -15,6 +23,7 @@ export interface LiveAccountDetail {
   executable: boolean;
   is_whale: boolean;
   data_size?: number;
+  mint_info?: LiveMintInfo;
 }
 
 export interface LiveTokenAccount {
@@ -156,16 +165,49 @@ export async function getLiveAccountDetail(address: string): Promise<LiveAccount
   const executable = Boolean(accountInfo.value.executable);
   const is_whale = (sol_balance * solPrice) >= 500000 || sol_balance >= 5000;
 
+  let account_type = executable
+    ? 'program'
+    : owner_program === '11111111111111111111111111111111'
+    ? 'system_account'
+    : 'data_account';
+
+  let mint_info: LiveMintInfo | undefined = undefined;
+
+  // Check if owner is SPL Token Program or Token-2022
+  if (
+    owner_program === 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA' ||
+    owner_program === 'TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb'
+  ) {
+    const dataParsed = accountInfo.value.data?.parsed;
+    if (dataParsed?.type === 'mint') {
+      account_type = 'token_mint';
+      const info = dataParsed.info || {};
+      mint_info = {
+        decimals: Number(info.decimals ?? 0),
+        supply: String(info.supply ?? '0'),
+        mintAuthority: info.mintAuthority || null,
+        freezeAuthority: info.freezeAuthority || null,
+        isInitialized: Boolean(info.isInitialized),
+      };
+    } else if (dataParsed?.type === 'account') {
+      account_type = 'token_account';
+    } else if (accountInfo.value.space === 82) {
+      // 82 bytes is standard SPL Mint data size
+      account_type = 'token_mint';
+    }
+  }
+
   return {
     address,
     sol_balance,
     lamports,
-    account_type: executable ? 'program' : owner_program === '11111111111111111111111111111111' ? 'system_account' : 'data_account',
+    account_type,
     owner_program,
     rent_epoch: accountInfo.value.rentEpoch,
     executable,
     is_whale,
     data_size: accountInfo.value.space || 0,
+    mint_info,
   };
 }
 

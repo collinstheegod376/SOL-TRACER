@@ -19,6 +19,12 @@ import {
 } from './analytics-engine';
 import { mcpClient } from './mcp-client';
 import { findMutualTransactions, traceLiveMultiHop, MutualTransactionDetail } from './solana-rpc';
+import {
+  getPumpTokenReport,
+  extractTokenOrTicker,
+  formatTokenAnalystReport,
+  TokenFullReport,
+} from './pumpfun-engine';
 
 export type QueryClassification =
   | 'LOOKUP'
@@ -28,7 +34,10 @@ export type QueryClassification =
   | 'FLOW_DIAGRAM'
   | 'SECURITY_AUDIT'
   | 'DEX_TRADES'
-  | 'MULTI_HOP';
+  | 'MULTI_HOP'
+  | 'TOKEN_INTEL'
+  | 'DEV_DOSSIER'
+  | 'BUNDLE_CHECK';
 
 export interface MessageHistoryItem {
   role: 'user' | 'assistant';
@@ -119,7 +128,29 @@ export function classifyQuery(message: string, history: MessageHistoryItem[] = [
     return 'CONVERSATIONAL';
   }
 
-  // 2. Security Audit
+  // 2. Token Bundle & Sniper Check
+  if (/(bundle|bundled|snip(ed|er|ing)|jito\s+bundle|block\s+0)/i.test(query)) {
+    return 'BUNDLE_CHECK';
+  }
+
+  // 3. Dev Dossier & Creator Tracking
+  if (/(dev\s+(holding|dump|sold|out|wallet|buy|history)|who\s+is\s+the\s+dev|creator\s+wallet|did\s+dev\s+dump|past\s+launches)/i.test(query)) {
+    return 'DEV_DOSSIER';
+  }
+
+  // 4. Token Intelligence / Pump.fun Coin Lookup ($TICKER, CA, or pump.fun address)
+  if (
+    /\$[a-zA-Z0-9_-]{2,15}\b/.test(message) ||
+    /[1-9A-HJ-NP-Za-km-z]{32,44}pump\b/i.test(message) ||
+    /tell\s+me\s+about\s+(\$|[A-Za-z0-9_-]{2,15}|[1-9A-HJ-NP-Za-km-z]{32,44})/i.test(query) ||
+    /(market\s+cap|mcap|ath|bonding\s+curve|pump\.?fun|top\s+holders?|ca\b|contract\s+address|check\s+this\s+token|coin)/i.test(query) ||
+    // If user posts an address with "check this" or "scan" or just drops an address ending in pump
+    (/(check|scan|audit|inspect|look\s*up|analyze)\s+(this|token|coin)?/i.test(query) && /[1-9A-HJ-NP-Za-km-z]{32,44}/.test(query))
+  ) {
+    return 'TOKEN_INTEL';
+  }
+
+  // 5. Security Audit
   if (/security|audit|drainer|safety|risk|phishing|threat|vulnerab|approval/i.test(query)) {
     return 'SECURITY_AUDIT';
   }
@@ -220,7 +251,19 @@ export function generateConversationalResponse(message: string): string {
   }
 
   if (/what\s+can\s+you\s+do|capabilities|help\b|features|what\s+do\s+you\s+do/i.test(q)) {
-    return `### What SolTrace Can Do For You 🚀\n\nHere is how I can help you analyze the Solana ledger:\n\n1. 🔍 **Deep Wallet & Balance Lookups:** Ask about SOL balances, SPL token holdings (USDT, USDC, meme coins), and recent transactions.\n2. 📊 **Interactive Visual Money Flow:** Ask to *"visualize money flow"* to see an inline diagram of where funds enter and leave.\n3. 🛡️ **Security & Drainer Risk Audit:** Ask to *"audit wallet security"* for a safety score (0–100%), delegated spending approvals, and scam tokens.\n4. 📈 **DEX Swap & PnL Tracking:** Ask *"show DEX swaps"* to decode trades on Raydium, Jupiter, Orca, and Meteora with buy/sell amounts.\n5. ⛓️ **Multi-Hop Path Tracing:** Ask to *"follow the money"* to trace outgoing funds 2–3 hops deep into recipient wallets or exchange hot wallets.\n6. 🤝 **Mutual Transaction Discovery:** Give me any 2 addresses (e.g. *"did Wallet A and Wallet B transact?"*) and I'll find all shared transactions and tokens.\n\nGo ahead and paste a wallet address, transaction signature, or ask any question!`;
+    return `### What SolTrace Can Do For You 🚀
+
+| Capability | What You Get | How It Looks |
+| :--- | :--- | :--- |
+| **Pump.fun & Token Intel** | Ask *"tell me about $TICKER"* or drop a CA to get Market Cap, 24h Volume, ATH, bonding curve progress, and socials. | 🪙 Token Card + Live Stats |
+| **Bundle & Sniper Audit** | Ask *"is it bundled?"* to detect block-0 Jito snipers, bundled supply %, and sniper dump activity. | 🚨 Bundle Score & Alerts |
+| **Dev Dossier Tracker** | Check if dev sold out (CTO), past tokens launched, and initial wallet funding origin. | 👤 Dev Dossier + Solscan Links |
+| **Visual Money-Flow** | Interactive flow charts showing SOL and token flows in and out of a wallet. | 📊 Flow Diagram |
+| **Security Risk Audits** | Safety score (0–100%), drainer detection, and malicious token approvals. | 🛡️ Security Audit Report |
+| **DEX Trades & PnL** | Decode swaps on Raydium, Jupiter, Orca, and Meteora with buy/sell amounts. | 📈 Trade Table + Net PnL |
+| **Multi-Hop Tracing** | Trace outgoing funds 2–3 hops deep into recipient wallets or exchanges. | ⛓️ Step-by-Step Hop Trace |
+
+Go ahead and paste a token ticker, contract address, or wallet to get started!`;
   }
 
   if (/thanks|thank\s+you|thx|appreciate/i.test(q)) {
@@ -228,7 +271,26 @@ export function generateConversationalResponse(message: string): string {
   }
 
   // General greeting fallback
-  return `Hello and welcome! 👋 I'm **SolTrace**, your AI Solana on-chain investigator.\n\nI can analyze wallet holdings, rank top senders/recipients of SOL and USDT/USDC, audit security risks, decode DEX swaps, and generate visual money flow maps.\n\nHow are you doing today? Paste any Solana wallet address or transaction signature to get started!`;
+  return `Hey there! 👋 I'm **SolTrace**, your on-chain detective for everything happening on Solana.
+
+How's your day going?
+
+### What I can do for you
+
+| Capability | What You Get | How It Looks |
+| :--- | :--- | :--- |
+| **Pump.fun & Token Intel** | Ask *"tell me about $TICKER"* or drop a CA to pull Market Cap, Volume, ATH, bonding curve %, and socials. | 🪙 Token Card + Live Stats |
+| **Bundle & Sniper Audit** | Ask *"is it bundled?"* to detect block-0 Jito snipers, bundled supply %, and dump risk. | 🚨 Bundle Score & Alerts |
+| **Dev Dossier Tracker** | Track if the dev dumped (CTO) or holds tokens, past tokens launched, and funding source. | 👤 Dev Dossier + Solscan Proof |
+| **Visual Money-Flow** | Interactive charts that show where SOL or tokens move in and out of a wallet. | 📊 Flow Chart |
+| **Security Risk Audits** | Spot suspicious patterns, rapid dumps, unknown programs, and drainers. | 🛡️ Risk Score & Recommendations |
+| **DEX Trades & PnL** | Pull swaps on Raydium, Orca, Jupiter with realized/unrealized profit-and-loss. | 📈 Trade Table + Net PnL |
+| **Multi-Hop Tracing** | Follow SOL amounts through a chain of swaps or transfers to see the full path. | ⛓️ Step-by-Step Trace |
+| **Counterparty Flow** | See who you're transacting with, their reputation, and clustering. | 👥 Counterparty List |
+
+All the insights are backed by **real transaction signatures and account pages** on Solscan, so you can click through to verify every detail.
+
+Got a token ticker (e.g. \`$GOAT\`), contract address, or wallet address you'd like me to dig into? Just paste it here and I'll start pulling the data for you! 🚀`;
 }
 
 /**
@@ -731,7 +793,42 @@ export async function executeOrchestrator(input: OrchestrationInput): Promise<Or
 
   const classification = classifyQuery(message, history);
 
-  // 1. CONVERSATIONAL QUERY (greetings, how are you, capabilities, small-talk)
+  // 1. TOKEN INTELLIGENCE, DEV DOSSIER & BUNDLE CHECK
+  if (
+    classification === 'TOKEN_INTEL' ||
+    classification === 'BUNDLE_CHECK' ||
+    classification === 'DEV_DOSSIER'
+  ) {
+    const tokenParsed = extractTokenOrTicker(message);
+    const targetQuery = tokenParsed.contractAddress || tokenParsed.ticker || walletAddress;
+
+    if (targetQuery) {
+      const isTicker = Boolean(tokenParsed.ticker && !tokenParsed.contractAddress);
+      const toolCalls: ToolCallRecord[] = [
+        {
+          tool: 'token_intel',
+          args: { query: targetQuery, isTicker },
+          resultSummary: `Scanned token metrics, bonding curve, bundle analysis, and dev history for ${targetQuery}`,
+        },
+      ];
+
+      const report: TokenFullReport = await getPumpTokenReport(targetQuery, isTicker);
+      const answer = formatTokenAnalystReport(report);
+
+      return {
+        answer,
+        classification,
+        toolCalls,
+        structuredData: {
+          type: 'token_report',
+          tokenReport: report,
+        },
+        engineUsed: 'deterministic',
+      };
+    }
+  }
+
+  // 2. CONVERSATIONAL QUERY (greetings, how are you, capabilities, small-talk)
   if (classification === 'CONVERSATIONAL') {
     const activeWalletNote = walletAddress
       ? `(Current Active Context Wallet: ${walletAddress})`
@@ -739,7 +836,16 @@ export async function executeOrchestrator(input: OrchestrationInput): Promise<Or
 
     const llmGreeting = await callLLMEngine(
       SYSTEM_ANALYST_PROMPT,
-      `User: "${message}"\n${activeWalletNote}\n\nRespond naturally and warmly as SolTrace AI. Answer their greeting, ask how they are doing, explain your key capabilities (visual money flow diagrams, security risk audits, DEX trades/PnL, multi-hop tracing, counterparty flow analysis), and invite them to paste any wallet or ask a question.`,
+      `User: "${message}"\n${activeWalletNote}\n\nRespond naturally and warmly as SolTrace AI. Answer their greeting, ask how they are doing, and present your core capabilities in a clean table or structured list including:
+1. Pump.fun & Meme Token Intelligence: Ask "tell me about $TICKER" or drop a CA to get Market Cap, 24h Volume, ATH, bonding curve progress, and socials.
+2. Bundle & Sniper Audits: Ask "is it bundled?" to detect block-0 Jito snipers, bundled supply percentage, and dump risk.
+3. Dev Wallet Dossier: Track if the dev dumped (CTO) or holds tokens, past tokens launched, and initial SOL funding source.
+4. Visual Money-Flow Diagrams: Interactive flowchart of SOL/token flows.
+5. Security Risk Audits: Safety score, drainers, and malicious approvals.
+6. DEX Trades & PnL: Swaps on Raydium, Jupiter, Orca with buy/sell amounts.
+7. Multi-Hop Tracing & Counterparties: Follow funds 2-3 hops deep.
+
+Invite them to paste any token mint/ticker, wallet address, or transaction signature to get started!`,
       history
     );
 
@@ -1082,6 +1188,28 @@ export async function executeOrchestrator(input: OrchestrationInput): Promise<Or
 
       const txExec = await mcpClient.callTool<any>('account_transactions', { address: walletAddress, limit: 10 });
       const txs = txExec.data;
+
+      // Check if this address is actually a Token Mint (e.g. Pump.fun token, meme coin)
+      if (detail?.account_type === 'token_mint' || walletAddress.endsWith('pump') || detail?.mint_info) {
+        const report = await getPumpTokenReport(walletAddress, false);
+        const tokenAnswer = formatTokenAnalystReport(report);
+        toolCalls.push({
+          tool: 'token_intel',
+          args: { query: walletAddress, isTicker: false },
+          resultSummary: `Identified token mint address ${formatAddress(walletAddress, 4)}. Analyzed token metrics, market cap, and bundle status.`,
+        });
+
+        return {
+          answer: tokenAnswer,
+          classification: 'TOKEN_INTEL',
+          toolCalls,
+          structuredData: {
+            type: 'token_report',
+            tokenReport: report,
+          },
+          engineUsed: 'deterministic',
+        };
+      }
 
       deterministicData = { type: 'balance', detail, tokens, transactions: txs };
       structuredData = { type: 'lookup_balance', detail, tokens, transactions: txs };

@@ -12,7 +12,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-export type QueryClassification = "LOOKUP" | "ENRICHMENT" | "AGGREGATION" | "CONVERSATIONAL" | "FLOW_DIAGRAM" | "SECURITY_AUDIT" | "DEX_TRADES" | "MULTI_HOP";
+export type QueryClassification = "LOOKUP" | "ENRICHMENT" | "AGGREGATION" | "CONVERSATIONAL" | "FLOW_DIAGRAM" | "SECURITY_AUDIT" | "DEX_TRADES" | "MULTI_HOP" | "TOKEN_INTEL" | "DEV_DOSSIER" | "BUNDLE_CHECK";
 
 export interface ToolCallTrace {
   id: string;
@@ -74,6 +74,24 @@ const CLASSIFICATION_BADGES: Record<
   },
   MULTI_HOP: {
     label: "MULTI-HOP",
+    bg: "bg-[#F4F4F4]",
+    text: "text-[#0D0D0D]",
+    border: "border-[#E5E7EB]",
+  },
+  TOKEN_INTEL: {
+    label: "TOKEN INTEL",
+    bg: "bg-[#F4F4F4]",
+    text: "text-[#0D0D0D]",
+    border: "border-[#E5E7EB]",
+  },
+  DEV_DOSSIER: {
+    label: "DEV DOSSIER",
+    bg: "bg-[#F4F4F4]",
+    text: "text-[#0D0D0D]",
+    border: "border-[#E5E7EB]",
+  },
+  BUNDLE_CHECK: {
+    label: "BUNDLE AUDIT",
     bg: "bg-[#F4F4F4]",
     text: "text-[#0D0D0D]",
     border: "border-[#E5E7EB]",

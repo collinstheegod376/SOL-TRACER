@@ -17,6 +17,16 @@ interface PromptOption {
 
 const DEFAULT_PROMPTS: PromptOption[] = [
   {
+    label: "Token Intel",
+    query: "Tell me about $GOAT and its market cap, volume, and socials.",
+    icon: Coins,
+  },
+  {
+    label: "Bundle & Sniper Audit",
+    query: "Is CzLSujWBLFsSjncfkh59rQD4PpHC228h3gkHx9814464 bundled? Check snipers and dev dump.",
+    icon: Sparkles,
+  },
+  {
     label: "Top senders",
     query: "Who sends money to this wallet frequently? Rank top senders with counts and total SOL.",
     icon: Users,
@@ -30,11 +40,6 @@ const DEFAULT_PROMPTS: PromptOption[] = [
     label: "Recent swaps",
     query: "Show recent DeFi swaps and DEX trading activity for this address.",
     icon: Repeat,
-  },
-  {
-    label: "SOL balance",
-    query: "What is the current SOL balance, account type, and owner program?",
-    icon: Sparkles,
   },
 ];
 

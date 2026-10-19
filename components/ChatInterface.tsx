@@ -13,6 +13,7 @@ import {
   ShieldCheck,
   TrendingUp,
   GitBranch,
+  Coins,
 } from "lucide-react";
 import {
   CounterpartyTable,
@@ -28,6 +29,8 @@ import {
   QueryClassification,
 } from "@/components/ToolExecutionTrace";
 import { shortenAddress, cn } from "@/lib/utils";
+import { PumpTokenCard } from "@/components/PumpTokenCard";
+import { TokenFullReport } from "@/lib/pumpfun-engine";
 
 export interface Message {
   id: string;
@@ -40,15 +43,41 @@ export interface Message {
   scannedTransactions?: number;
   tokens?: TokenHolding[];
   solBalance?: number;
+  tokenReport?: TokenFullReport;
   dataWindow?: string;
   limitations?: string;
   engineUsed?: string;
 }
 
-/**
- * Format markdown with tables, headers, code blocks, and Solscan proof links
- * Styled for clean light mode
- */
+
+
+function formatInline(text: string): string {
+  return text
+    // Clickable Solscan transaction proof links
+    .replace(
+      /\[([^\]]+)\]\((https?:\/\/solscan\.io\/tx\/[^\s\)]+)\)/g,
+      '<a href="$2" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1 px-2 py-0.5 mx-0.5 rounded-full text-[11px] font-mono bg-[#F4F4F4] text-[#0D0D0D] hover:bg-[#EBEBEB] border border-[#E5E7EB] transition-colors font-medium" title="Verify on Solscan"><svg class="w-3 h-3 inline-block text-[#5D5D5D]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>$1</a>'
+    )
+    // Clickable Solscan account/token proof links
+    .replace(
+      /\[([^\]]+)\]\((https?:\/\/solscan\.io\/(?:account|token)\/[^\s\)]+)\)/g,
+      '<a href="$2" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1 px-2 py-0.5 mx-0.5 rounded-full text-[11px] font-mono bg-[#F4F4F4] text-[#0D0D0D] hover:bg-[#EBEBEB] border border-[#E5E7EB] transition-colors font-medium" title="View on Solscan"><svg class="w-3 h-3 inline-block text-[#5D5D5D]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>$1</a>'
+    )
+    // Generic external markdown links [text](url)
+    .replace(
+      /\[([^\]]+)\]\((https?:\/\/[^\s\)]+)\)/g,
+      '<a href="$2" target="_blank" rel="noopener noreferrer" class="text-[#0D0D0D] font-medium underline underline-offset-2 hover:text-[#5D5D5D] inline-flex items-center gap-0.5">$1</a>'
+    )
+    // Bold / Italic
+    .replace(/\*\*(.*?)\*\*/g, '<strong class="font-semibold text-[#0D0D0D]">$1</strong>')
+    .replace(/\*(.*?)\*/g, '<em class="text-[#5D5D5D]">$1</em>')
+    // Inline code
+    .replace(
+      /`([^`]+)`/g,
+      '<code class="bg-[#F4F4F4] px-1.5 py-0.5 rounded text-[#0D0D0D] font-mono text-[11px] border border-[#E5E7EB]">$1</code>'
+    );
+}
+
 function renderMarkdownContent(text: string): string {
   if (!text) return "";
 
@@ -122,7 +151,7 @@ function renderMarkdownContent(text: string): string {
     return visualHtml;
   });
 
-  // 1. Convert markdown tables
+  // 1. Process line-by-line: table parsing and inline formatting
   const lines = text.split("\n");
   const processedLines: string[] = [];
   let inTable = false;
@@ -167,55 +196,42 @@ function renderMarkdownContent(text: string): string {
     }
   };
 
-  for (const line of lines) {
+  for (const rawLine of lines) {
+    const line = rawLine;
     if (line.trim().startsWith("|") && line.trim().endsWith("|")) {
       inTable = true;
       tableRows.push(line.trim());
     } else {
       if (inTable) flushTable();
-      processedLines.push(line);
+
+      // Headers (format inline content inside header clean)
+      if (/^#### (.*$)/.test(line)) {
+        const title = line.replace(/^####\s*/, "");
+        processedLines.push(`<h4 class="text-xs font-bold text-[#0D0D0D] uppercase tracking-wider mt-3 mb-1">${formatInline(title)}</h4>`);
+      } else if (/^### (.*$)/.test(line)) {
+        const title = line.replace(/^###\s*/, "");
+        processedLines.push(`<h3 class="text-sm font-semibold text-[#0D0D0D] mt-3.5 mb-1.5 flex items-center gap-1.5"><span class="w-1.5 h-1.5 rounded-full bg-[#0D0D0D]"></span>${formatInline(title)}</h3>`);
+      } else if (/^## (.*$)/.test(line)) {
+        const title = line.replace(/^##\s*/, "");
+        processedLines.push(`<h2 class="text-base font-bold text-[#0D0D0D] mt-4 mb-2">${formatInline(title)}</h2>`);
+      } else if (/^- (.*$)/.test(line)) {
+        const item = line.replace(/^- /, "");
+        processedLines.push(`<li class="ml-4 list-disc text-xs sm:text-sm text-[#5D5D5D] my-0.5">${formatInline(item)}</li>`);
+      } else if (/^\* (.*$)/.test(line)) {
+        const item = line.replace(/^\* /, "");
+        processedLines.push(`<li class="ml-4 list-disc text-xs sm:text-sm text-[#5D5D5D] my-0.5">${formatInline(item)}</li>`);
+      } else if (/^---$/.test(line.trim())) {
+        processedLines.push('<hr class="my-3 border-t border-[#E5E7EB]" />');
+      } else if (line.trim().length > 0) {
+        processedLines.push(`<p class="my-1">${formatInline(line)}</p>`);
+      } else {
+        processedLines.push('');
+      }
     }
   }
   if (inTable) flushTable();
 
-  let formatted = processedLines.join("\n");
-
-  // Headers
-  formatted = formatted.replace(
-    /^### (.*$)/gim,
-    '<h3 class="text-sm font-semibold text-[#0D0D0D] mt-3.5 mb-1.5 flex items-center gap-1.5"><span class="w-1.5 h-1.5 rounded-full bg-[#0D0D0D]"></span>$1</h3>'
-  );
-  formatted = formatted.replace(/^## (.*$)/gim, '<h2 class="text-base font-bold text-[#0D0D0D] mt-4 mb-2">$1</h2>');
-
-  // Lists
-  formatted = formatted.replace(/^- (.*$)/gim, '<li class="ml-4 list-disc text-xs sm:text-sm text-[#5D5D5D] my-0.5">$1</li>');
-
-  return formatInline(formatted);
-}
-
-function formatInline(text: string): string {
-  return text
-    // Clickable proof links: [label](url)
-    .replace(
-      /\[(.*?)\]\((https?:\/\/solscan\.io\/tx\/[^\s\)]+)\)/g,
-      '<a href="$2" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1 px-2 py-0.5 mx-0.5 rounded-full text-[11px] font-mono bg-[#F4F4F4] text-[#0D0D0D] hover:bg-[#EBEBEB] border border-[#E5E7EB] transition-colors font-medium" title="Verify on Solscan"><svg class="w-3 h-3 inline-block text-[#5D5D5D]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>$1</a>'
-    )
-    .replace(
-      /\[(.*?)\]\((https?:\/\/solscan\.io\/account\/[^\s\)]+)\)/g,
-      '<a href="$2" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1 px-2 py-0.5 mx-0.5 rounded-full text-[11px] font-mono bg-[#F4F4F4] text-[#0D0D0D] hover:bg-[#EBEBEB] border border-[#E5E7EB] transition-colors font-medium" title="View account on Solscan"><svg class="w-3 h-3 inline-block text-[#5D5D5D]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>$1</a>'
-    )
-    .replace(
-      /\[(.*?)\]\((https?:\/\/[^\s\)]+)\)/g,
-      '<a href="$2" target="_blank" rel="noopener noreferrer" class="text-[#0D0D0D] font-medium underline underline-offset-2 hover:text-[#5D5D5D] inline-flex items-center gap-0.5">$1</a>'
-    )
-    // Bold / Italic
-    .replace(/\*\*(.*?)\*\*/g, '<strong class="font-semibold text-[#0D0D0D]">$1</strong>')
-    .replace(/\*(.*?)\*/g, '<em class="text-[#5D5D5D]">$1</em>')
-    // Inline code
-    .replace(
-      /`([^`]+)`/g,
-      '<code class="bg-[#F4F4F4] px-1.5 py-0.5 rounded text-[#0D0D0D] font-mono text-[11px] border border-[#E5E7EB]">$1</code>'
-    );
+  return processedLines.join("\n");
 }
 
 export function ChatInterface() {
@@ -333,6 +349,8 @@ export function ChatInterface() {
         }));
       }
 
+      const tokenReport: TokenFullReport | undefined = data.structuredData?.tokenReport || undefined;
+
       const botMsg: Message = {
         id: Math.random().toString(36).substring(2, 9),
         sender: "assistant",
@@ -344,6 +362,7 @@ export function ChatInterface() {
         scannedTransactions,
         tokens,
         solBalance,
+        tokenReport,
         engineUsed: data.engineUsed,
       };
 
@@ -442,6 +461,20 @@ export function ChatInterface() {
 
             {/* Clean Pill Action Chips - 44px min touch target */}
             <div className="flex flex-wrap justify-center gap-2 pt-2">
+              <button
+                type="button"
+                onClick={() => handleSendMessage("Tell me about $GOAT and its market cap, volume, and socials.")}
+                className="min-h-[44px] px-4 py-2 rounded-full text-xs font-medium text-[#0D0D0D] bg-[#FFFFFF] hover:bg-[#F4F4F4] border border-[#E5E7EB] shadow-xs transition-colors cursor-pointer flex items-center gap-1.5"
+              >
+                <Coins className="w-3.5 h-3.5 text-[#5D5D5D]" /> Token Intel
+              </button>
+              <button
+                type="button"
+                onClick={() => handleSendMessage("Is CzLSujWBLFsSjncfkh59rQD4PpHC228h3gkHx9814464 bundled? Check snipers and dev dump.")}
+                className="min-h-[44px] px-4 py-2 rounded-full text-xs font-medium text-[#0D0D0D] bg-[#FFFFFF] hover:bg-[#F4F4F4] border border-[#E5E7EB] shadow-xs transition-colors cursor-pointer flex items-center gap-1.5"
+              >
+                <Sparkles className="w-3.5 h-3.5 text-[#5D5D5D]" /> Bundle Audit
+              </button>
               <button
                 type="button"
                 onClick={() => handleSendMessage("hi! how are you?")}
@@ -547,6 +580,13 @@ export function ChatInterface() {
                         tokens={msg.tokens}
                         solBalance={msg.solBalance}
                       />
+                    </div>
+                  )}
+
+                  {/* Pump.fun & Meme Token Intelligence Card */}
+                  {msg.tokenReport && (
+                    <div className="mt-3">
+                      <PumpTokenCard report={msg.tokenReport} />
                     </div>
                   )}
                 </div>

@@ -12,12 +12,18 @@ export const viewport: Viewport = {
 export const metadata: Metadata = {
   metadataBase: new URL("https://soltracer.vercel.app"),
   title: {
-    default: "SolTrace — AI Solana On-Chain Transaction Scanner",
-    template: "%s | SolTrace",
+    default: "SolTrace (Sol Tracer AI) — AI Solana On-Chain Transaction Scanner",
+    template: "%s | Sol Tracer AI",
   },
   description:
     "Open-source conversational AI blockchain scanner for Solana. Real-time wallet tracking, visual money flow diagrams, drainer risk audits, and DEX swap analytics.",
   keywords: [
+    "sol tracer ai",
+    "Sol Tracer AI",
+    "sol tracer",
+    "SolTracer",
+    "soltracer",
+    "soltracer ai",
     "SolTrace",
     "Solana",
     "Solscan",
@@ -42,7 +48,7 @@ export const metadata: Metadata = {
   ],
   creator: "promisedkillua",
   publisher: "promisedkillua",
-  applicationName: "SolTrace",
+  applicationName: "Sol Tracer AI",
   generator: "Next.js",
   referrer: "origin-when-cross-origin",
   formatDetection: {
@@ -57,14 +63,14 @@ export const metadata: Metadata = {
     type: "website",
     locale: "en_US",
     url: "https://soltracer.vercel.app",
-    siteName: "SolTrace",
-    title: "SolTrace — AI Solana On-Chain Transaction Scanner",
+    siteName: "Sol Tracer AI",
+    title: "SolTrace | Sol Tracer AI — Solana On-Chain Transaction Scanner",
     description:
       "Inspect Solana wallets, visual money flow maps, security drainer audits, and DEX trades using plain natural language.",
   },
   twitter: {
     card: "summary_large_image",
-    title: "SolTrace — AI Solana On-Chain Transaction Scanner",
+    title: "SolTrace | Sol Tracer AI — Solana On-Chain Transaction Scanner",
     description:
       "Conversational AI blockchain scanner for Solana wallets, visual money flow maps, security drainer audits, and DEX trades.",
     creator: "@promisedkillua",
@@ -94,6 +100,7 @@ const jsonLd = {
       "@type": "WebApplication",
       "@id": "https://soltracer.vercel.app/#webapp",
       "name": "SolTrace",
+      "alternateName": ["Sol Tracer AI", "sol tracer ai", "SolTracer", "soltracer"],
       "url": "https://soltracer.vercel.app",
       "applicationCategory": "FinancialApplication",
       "operatingSystem": "All",

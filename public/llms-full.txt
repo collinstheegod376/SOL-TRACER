@@ -1,6 +1,6 @@
-# SolTrace — Complete System Reference for Language Models
+# SolTrace (Sol Tracer AI) — Complete System Reference for Language Models
 
-SolTrace is an open-source AI assistant and on-chain blockchain investigator specialized for the Solana network.
+SolTrace (also referenced as **Sol Tracer AI**) is an open-source AI assistant and on-chain blockchain investigator specialized for the Solana network.
 
 Developed by **promisedkillua** (<https://www.promisedkillua.sbs/>).
 Hosted live at <https://soltracer.vercel.app/>.

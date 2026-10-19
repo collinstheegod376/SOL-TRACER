@@ -1,8 +1,8 @@
-# SolTrace
+# SolTrace (Sol Tracer AI)
 
 > Conversational AI Solana On-Chain Transaction Scanner and Forensics Engine.
 
-SolTrace is an open-source tool designed to make Solana blockchain analysis intuitive and accessible without wading through dense, raw transaction logs or confusing hex instructions. Users can explore wallets, analyze token movements, audit drainer risks, and inspect DEX swaps using natural language.
+SolTrace (also known as **Sol Tracer AI**) is an open-source tool designed to make Solana blockchain analysis intuitive and accessible without wading through dense, raw transaction logs or confusing hex instructions. Users can explore wallets, analyze token movements, audit drainer risks, and inspect DEX swaps using natural language.
 
 - **Developer**: promisedkillua (https://www.promisedkillua.sbs/)
 - **Live Application**: https://soltracer.vercel.app/

@@ -123,18 +123,21 @@ export function sanitizeLamports(text: string): string {
   if (!text) return text;
   return text
     .replace(/\s*\(\s*[\d,]+\s*lamports?\s*\)/gi, '')
-    .replace(/\buninitialized account with no lamports\b/gi, 'unfunded account with 0 SOL')
-    .replace(/\buninitialized account with 0 SOL\b/gi, 'unfunded account with 0 SOL')
-    .replace(/\bwith no lamports\b/gi, 'with 0 SOL')
-    .replace(/\bno lamports\b/gi, '0 SOL')
-    .replace(/\b0 lamports\b/gi, '0 SOL')
-    .replace(/\bzero lamports\b/gi, '0 SOL')
-    .replace(/\b([\d,]+(?:\.\d+)?)\s*lamports?\b/gi, (match, n) => {
+    .replace(/uninitialized account with no lamports/gi, 'unfunded account with 0 SOL')
+    .replace(/uninitialized account with 0 SOL/gi, 'unfunded account with 0 SOL')
+    .replace(/uninitialized account/gi, 'unfunded account')
+    .replace(/with no lamports/gi, 'with 0 SOL')
+    .replace(/holds? 0 lamports/gi, 'holds 0 SOL')
+    .replace(/has 0 lamports/gi, 'has 0 SOL')
+    .replace(/no lamports/gi, '0 SOL')
+    .replace(/0 lamports/gi, '0 SOL')
+    .replace(/zero lamports/gi, '0 SOL')
+    .replace(/([\d,]+(?:\.\d+)?)\s*lamports?/gi, (match, n) => {
       const num = Number(n.replace(/,/g, ''));
-      if (isNaN(num)) return match;
+      if (isNaN(num)) return 'SOL';
       return `${(num / 1e9).toFixed(4)} SOL`;
     })
-    .replace(/\blamports?\b/gi, 'SOL');
+    .replace(/lamports?/gi, 'SOL');
 }
 
 /**
@@ -499,7 +502,7 @@ function synthesizeDeterministicResponse(params: {
       return { answer: data.briefing.summary, showWidgets: false, isFullReportRequested: false };
     }
     return {
-      answer: "gm! While you were away, $BONK pumped 20%. A major whale moved $5M in SOL to Binance, and high sniper volume was detected across AI tokens. Keep an eye on AI momentum today.",
+      answer: "gm! Solana network telemetry is active across Raydium and Pump.fun DEX pools. Volume is steady across ecosystem tokens today.",
       showWidgets: false,
       isFullReportRequested: false,
     };
@@ -1841,7 +1844,7 @@ Invite them to paste any token mint/ticker, wallet address, or transaction signa
   if (llmResult) {
     let finalAnswer = llmResult.answer;
 
-    if (classification === 'AGGREGATION' && !finalAnswer.includes('| Sender |') && !finalAnswer.includes('| Recipient |')) {
+    if (isReport && classification === 'AGGREGATION' && !finalAnswer.includes('| Sender |') && !finalAnswer.includes('| Recipient |')) {
       const { ranked, rankedTokens, totalScanned, dir } = deterministicData;
       finalAnswer += `\n\n### Counterparty Breakdown\n` + formatCounterpartyTable(ranked || [], dir, 5);
       if (rankedTokens && rankedTokens.length > 0) {
@@ -1850,7 +1853,7 @@ Invite them to paste any token mint/ticker, wallet address, or transaction signa
       finalAnswer += `\n\n### Data Scope & Limitations\n- **Transactions Scanned:** Scanned **${totalScanned} transactions** across native SOL and Associated Token Accounts (ATAs).\n- **Limitations:** Based on retrieved on-chain activity window and rate limits.`;
     }
 
-    if (classification === 'ENRICHMENT' && !finalAnswer.includes('Total Estimated Portfolio Value')) {
+    if (isReport && classification === 'ENRICHMENT' && !finalAnswer.includes('Total Estimated Portfolio Value')) {
       finalAnswer = `**Target Wallet:** \`${formatAddress(walletAddress, 4)}\`\n\n${finalAnswer}\n\n### Total Estimated Portfolio Value\n- **Total Net Worth:** $${structuredData.valuation?.totalUsdValue?.toLocaleString()} USD\n- **Whale Status:** ${structuredData.valuation?.isWhale ? 'Yes' : 'No'}`;
     }
 

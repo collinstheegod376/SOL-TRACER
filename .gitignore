@@ -33,3 +33,12 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# loss-rebate workspace (install inside each package; do not pnpm-install the root)
+packages/**/node_modules
+apps/**/node_modules
+programs/**/node_modules
+programs/**/target
+packages/**/dist
+apps/**/.next
+apps/**/dist

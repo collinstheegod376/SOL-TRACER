@@ -63,18 +63,21 @@ function sanitizeLamportsClient(text: string): string {
   if (!text) return text;
   return text
     .replace(/\s*\(\s*[\d,]+\s*lamports?\s*\)/gi, '')
-    .replace(/\buninitialized account with no lamports\b/gi, 'unfunded account with 0 SOL')
-    .replace(/\buninitialized account with 0 SOL\b/gi, 'unfunded account with 0 SOL')
-    .replace(/\bwith no lamports\b/gi, 'with 0 SOL')
-    .replace(/\bno lamports\b/gi, '0 SOL')
-    .replace(/\b0 lamports\b/gi, '0 SOL')
-    .replace(/\bzero lamports\b/gi, '0 SOL')
-    .replace(/\b([\d,]+(?:\.\d+)?)\s*lamports?\b/gi, (match, n) => {
+    .replace(/uninitialized account with no lamports/gi, 'unfunded account with 0 SOL')
+    .replace(/uninitialized account with 0 SOL/gi, 'unfunded account with 0 SOL')
+    .replace(/uninitialized account/gi, 'unfunded account')
+    .replace(/with no lamports/gi, 'with 0 SOL')
+    .replace(/holds? 0 lamports/gi, 'holds 0 SOL')
+    .replace(/has 0 lamports/gi, 'has 0 SOL')
+    .replace(/no lamports/gi, '0 SOL')
+    .replace(/0 lamports/gi, '0 SOL')
+    .replace(/zero lamports/gi, '0 SOL')
+    .replace(/([\d,]+(?:\.\d+)?)\s*lamports?/gi, (match, n) => {
       const num = Number(n.replace(/,/g, ''));
-      if (isNaN(num)) return match;
+      if (isNaN(num)) return 'SOL';
       return `${(num / 1e9).toFixed(4)} SOL`;
     })
-    .replace(/\blamports?\b/gi, 'SOL');
+    .replace(/lamports?/gi, 'SOL');
 }
 
 function splitThreadIntoTweets(text: string): string[] {

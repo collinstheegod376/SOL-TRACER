@@ -58,16 +58,19 @@ export function AboutDevModal({ isOpen, onClose }: AboutDevModalProps) {
         <div className="p-5 sm:p-6 space-y-5 overflow-y-auto">
           {/* Identity */}
           <div className="flex items-center gap-4">
-            {/* Replace /nerfed_killua.png in /public with the profile image */}
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src="/nerfed_killua.png"
-              alt="nerfed_killua"
-              className="w-16 h-16 rounded-2xl object-cover bg-[#F4F4F4] border border-[#E5E7EB]"
-              onError={(e) => {
-                (e.currentTarget as HTMLImageElement).style.visibility = "hidden";
-              }}
-            />
+            {/* Avatar with fallback */}
+            <div className="relative w-16 h-16 rounded-2xl overflow-hidden bg-[#0D0D0D] border border-[#E5E7EB] shrink-0 flex items-center justify-center text-white shadow-xs">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="/nerfed_killua.png"
+                alt="nerfed_killua"
+                className="absolute inset-0 w-full h-full object-cover"
+                onError={(e) => {
+                  (e.currentTarget as HTMLImageElement).style.display = "none";
+                }}
+              />
+              <span className="text-sm font-mono font-bold tracking-wider text-emerald-400">NK</span>
+            </div>
             <div className="min-w-0">
               <div className="font-bold text-base text-[#0D0D0D] tracking-tight">
                 nerfed_killua

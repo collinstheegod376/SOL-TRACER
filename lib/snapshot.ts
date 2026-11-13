@@ -54,7 +54,7 @@ function decorate(snapshot: SnapshotFile, sent: Record<string, string>): Snapsho
     const paid = BigInt(sent[row.wallet] ?? "0");
     const rebate = BigInt(row.rebateLamports);
     const owing = rebate > paid ? rebate - paid : 0n;
-    if (row.status !== "sent" && owing > 0n) {
+    if (row.status !== "sent" && owing >= 5_000_000n) {
       due += owing;
       dueCount += 1;
     }

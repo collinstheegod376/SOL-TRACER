@@ -38,6 +38,8 @@ type Snapshot = {
   txCount: number;
   swapCount: number;
   truncated: boolean;
+  poolLamports?: string;
+  totalLossLamports?: string;
   rows: Row[];
   skipped: Skipped[];
   dueCount: number;
@@ -115,7 +117,7 @@ export default function Dashboard({ initial }: { initial: { vault: Vault | null;
     setSnapshot(body.snapshot);
     setNotice(
       body.snapshot.rows.length
-        ? `${body.snapshot.rows.length} wallet${body.snapshot.rows.length === 1 ? "" : "s"} fit. A bigger loss pays more SOL.`
+        ? `${body.snapshot.rows.length} wallets. ${solOf(body.snapshot.poolLamports || "0")} SOL is split by loss, largest first.`
         : "No wallet fit the rules.",
     );
   }
@@ -205,15 +207,18 @@ export default function Dashboard({ initial }: { initial: { vault: Vault | null;
             <li>Run pays the eligible wallets in the file. It starts the Python script, which sends the SOL from the vault.</li>
           </ol>
           <p className="hint">
-            The rebate matches the loss. A bigger loss pays more SOL, up to $100 and up to half of the SOL spent buying. Loss at least $5. Under 0.005 SOL is not paid. A gain does not cancel a loss. There is no minimum hold.
-            {snapshot ? ` Last snapshot used SOL at $${snapshot.solPriceUsd}. ${snapshot.txCount} transactions, ${snapshot.swapCount} swaps.` : ""}
+            Spendable SOL is divided by the total losses. The largest loss gets the largest share, and an equal loss gets an equal share. A share cannot pass the loss, $100, or half the SOL spent buying. Loss at least $5. A share under 0.005 SOL is not sent. A gain does not cancel a loss. There is no minimum hold.
+            {snapshot?.poolLamports
+              ? ` This snapshot splits ${solOf(snapshot.poolLamports)} SOL across ${solOf(snapshot.totalLossLamports || "0")} SOL of losses.`
+              : ""}
+            {snapshot ? ` SOL price $${snapshot.solPriceUsd}. ${snapshot.txCount} transactions, ${snapshot.swapCount} swaps.` : ""}
             {snapshot?.truncated ? " The history was cut off at the page limit." : ""}
           </p>
         </section>
 
         <section className="panel" style={{ marginTop: 12 }}>
           <h2>Eligible sellers</h2>
-          <p className="hint">Sorted by rebate. The largest loss is first.</p>
+          <p className="hint">Highest loss first. The rebate is that wallet’s share of the vault, so it is smaller than the loss while the vault is smaller than the losses.</p>
           {!snapshot && <p className="empty">No snapshot yet.</p>}
           {snapshot && snapshot.rows.length === 0 && <p className="empty">No wallet fit the rules in this snapshot.</p>}
           {snapshot && snapshot.rows.length > 0 && (

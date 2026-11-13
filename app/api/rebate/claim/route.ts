@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
+import { claimEligibility } from "@/lib/eligibility";
 import { assertWallet } from "@/lib/rebate";
-import { markClaimed } from "@/lib/snapshot";
 
 export const dynamic = "force-dynamic";
 
@@ -9,7 +9,7 @@ export async function POST(request: Request) {
   if (!body?.wallet) return NextResponse.json({ error: "Wallet is required." }, { status: 400 });
   try {
     const address = assertWallet(body.wallet);
-    return NextResponse.json(markClaimed(address));
+    return NextResponse.json(claimEligibility(address));
   } catch {
     return NextResponse.json({ error: "That is not a Solana address." }, { status: 400 });
   }

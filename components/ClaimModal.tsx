@@ -49,15 +49,16 @@ export function ClaimModal({ isOpen, onClose, activeWallet }: ClaimModalProps) {
     setError("");
     setResult(null);
     try {
-      const response = await fetch(`/api/rebate?wallet=${encodeURIComponent(address.trim())}`);
-      const body = (await response.json()) as Lookup & { error?: string };
+      const response = await fetch(`/api/rebate?wallet=${encodeURIComponent(address.trim())}`, { cache: "no-store" });
+      const text = await response.text();
+      const body = JSON.parse(text) as Lookup & { error?: string };
       if (!response.ok) {
-        setError(body.error || "Lookup failed.");
+        setError(body.error || "Could not read the eligibility list.");
         return;
       }
       setResult(body);
     } catch {
-      setError("The rebate service is not reachable.");
+      setError("Could not read the eligibility list.");
     } finally {
       setLoading(false);
     }
@@ -71,15 +72,17 @@ export function ClaimModal({ isOpen, onClose, activeWallet }: ClaimModalProps) {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ wallet: address.trim() }),
+        cache: "no-store",
       });
-      const body = (await response.json()) as Lookup & { error?: string };
+      const text = await response.text();
+      const body = JSON.parse(text) as Lookup & { error?: string };
       if (!response.ok) {
-        setError(body.error || "Claim failed.");
+        setError(body.error || "Could not save the claim.");
         return;
       }
       setResult(body);
     } catch {
-      setError("The rebate service is not reachable.");
+      setError("Could not save the claim.");
     } finally {
       setSending(false);
     }
@@ -112,9 +115,9 @@ export function ClaimModal({ isOpen, onClose, activeWallet }: ClaimModalProps) {
         </div>
 
         <h2 className="mt-4 text-lg font-semibold text-[#0D0D0D]">Claim</h2>
-        <p className="mt-1 text-sm text-[#5D5D5D] leading-relaxed">
-          Enter the wallet that sold the token. If it is on the latest snapshot, the rebate amount is shown here.
-        </p>
+        <div className="mt-1 text-sm text-[#5D5D5D] leading-relaxed space-y-1">
+          <p>Eligible means you sold this token at a loss of at least $5. A bigger loss gets a bigger share of the vault.</p>
+        </div>
 
         <label className="mt-4 block text-xs font-medium text-[#5D5D5D]" htmlFor="claim-address">
           Address
@@ -155,7 +158,7 @@ export function ClaimModal({ isOpen, onClose, activeWallet }: ClaimModalProps) {
             <p className="text-sm font-medium text-[#0D0D0D]">{result.message}</p>
             <p className="mt-1 text-lg font-semibold text-[#0D0D0D]">{result.sol} SOL</p>
             <p className="mt-1 text-sm text-[#5D5D5D]">
-              Loss {result.lossSol} SOL. A larger loss pays more SOL.
+              Loss {result.lossSol} SOL. A larger loss gets a larger share of the vault.
             </p>
             {result.status === "eligible" && (
               <button

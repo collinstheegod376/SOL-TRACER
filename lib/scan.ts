@@ -1,3 +1,5 @@
+import { NETWORK_FEE, RENT_RESERVE, vaultBalanceLamports } from "@/lib/rebate";
+
 const LAMPORTS = 1_000_000_000n;
 const MIN_LOSS_CENTS = 500n;
 const CAP_CENTS = 10_000n;
@@ -40,6 +42,8 @@ export type ScanMeta = {
   txCount: number;
   swapCount: number;
   truncated: boolean;
+  poolLamports: string;
+  totalLossLamports: string;
   rules: {
     minHoldSeconds: number;
     minLossUsd: number;
@@ -246,22 +250,18 @@ function settle(events: SwapEvent[], solPriceCents: bigint, alreadySent: Record<
     const roomCents = CAP_CENTS > alreadyCents ? CAP_CENTS - alreadyCents : 0n;
     const roomLamports = centsToLamports(roomCents, solPriceCents);
     const halfLamports = acc.buyLamports / 2n;
-    let rebateLamports = acc.lossLamports;
+    let ceiling = acc.lossLamports;
     let note = "";
-    if (halfLamports < rebateLamports) {
-      rebateLamports = halfLamports;
+    if (halfLamports < ceiling) {
+      ceiling = halfLamports;
       note = "Capped at half the SOL spent buying";
     }
-    if (roomLamports < rebateLamports) {
-      rebateLamports = roomLamports;
+    if (roomLamports < ceiling) {
+      ceiling = roomLamports;
       note = "Capped at $100";
     }
-    if (rebateLamports <= 0n) {
+    if (ceiling <= 0n) {
       skipped.push({ ...base, reason: "Already at the $100 cap" });
-      continue;
-    }
-    if (rebateLamports < DUST_LAMPORTS) {
-      skipped.push({ ...base, reason: "Rebate under 0.005 SOL" });
       continue;
     }
 
@@ -269,9 +269,9 @@ function settle(events: SwapEvent[], solPriceCents: bigint, alreadySent: Record<
       wallet,
       lossLamports: acc.lossLamports.toString(),
       buyLamports: acc.buyLamports.toString(),
-      rebateLamports: rebateLamports.toString(),
+      rebateLamports: ceiling.toString(),
       lossUsd: centsToUsd(lossCents),
-      rebateUsd: centsToUsd(lamportsToCents(rebateLamports, solPriceCents)),
+      rebateUsd: "0.00",
       holdSeconds: acc.holdSeconds,
       sells: acc.sells,
       buys: acc.buys,
@@ -279,9 +279,40 @@ function settle(events: SwapEvent[], solPriceCents: bigint, alreadySent: Record<
     });
   }
 
-  rows.sort((a, b) => (BigInt(a.rebateLamports) < BigInt(b.rebateLamports) ? 1 : -1));
+  rows.sort((a, b) => (BigInt(a.lossLamports) < BigInt(b.lossLamports) ? 1 : -1));
   skipped.sort((a, b) => (BigInt(a.lossLamports) < BigInt(b.lossLamports) ? 1 : -1));
   return { rows, skipped };
+}
+
+function sharePool(rows: ScanRow[], poolLamports: bigint, solPriceCents: bigint): ScanRow[] {
+  const totalLoss = rows.reduce((sum, row) => sum + BigInt(row.lossLamports), 0n);
+  const ceilings = rows.map((row) => BigInt(row.rebateLamports));
+  const ceilingTotal = ceilings.reduce((sum, value) => sum + value, 0n);
+  const pool = poolLamports <= 0n || totalLoss === 0n ? 0n : poolLamports < ceilingTotal ? poolLamports : ceilingTotal;
+  const shares = ceilings.map(() => 0n);
+  if (pool > 0n) {
+    for (let i = 0; i < rows.length; i += 1) {
+      shares[i] = (pool * BigInt(rows[i].lossLamports)) / totalLoss;
+      if (shares[i] > ceilings[i]) shares[i] = ceilings[i];
+    }
+    let leftover = pool - shares.reduce((sum, value) => sum + value, 0n);
+    for (let i = 0; leftover > 0n && i < shares.length; i += 1) {
+      if (shares[i] >= ceilings[i]) continue;
+      shares[i] += 1n;
+      leftover -= 1n;
+    }
+  }
+  return rows.map((row, index) => {
+    const share = shares[index];
+    let note = row.note;
+    if (share < DUST_LAMPORTS) note = note ? `${note}. Under 0.005 SOL` : "Under 0.005 SOL";
+    return {
+      ...row,
+      rebateLamports: share.toString(),
+      rebateUsd: centsToUsd(lamportsToCents(share, solPriceCents)),
+      note,
+    };
+  });
 }
 
 async function solPriceCents(): Promise<bigint> {
@@ -362,9 +393,18 @@ export async function scanSellers(alreadySent: Record<string, string>, vault: st
   if (!mint) throw new Error("TOKEN_MINT is not set.");
   if (!apiKey) throw new Error("HELIUS_API_KEY is not set.");
 
-  const [{ txs, truncated }, solPrice] = await Promise.all([loadHistory(mint, apiKey), solPriceCents()]);
+  const [{ txs, truncated }, solPrice, balance] = await Promise.all([
+    loadHistory(mint, apiKey),
+    solPriceCents(),
+    vaultBalanceLamports(),
+  ]);
   const events = readEvents(txs, mint, vault);
-  const { rows, skipped } = settle(events, solPrice, alreadySent);
+  const settled = settle(events, solPrice, alreadySent);
+  const fees = BigInt(settled.rows.length) * BigInt(NETWORK_FEE);
+  const reserve = BigInt(RENT_RESERVE);
+  const available = balance > reserve + fees ? balance - reserve - fees : 0n;
+  const rows = sharePool(settled.rows, available, solPrice);
+  const totalLoss = rows.reduce((sum, row) => sum + BigInt(row.lossLamports), 0n);
   const meta: ScanMeta = {
     takenAt: new Date().toISOString(),
     mint,
@@ -372,7 +412,9 @@ export async function scanSellers(alreadySent: Record<string, string>, vault: st
     txCount: txs.length,
     swapCount: events.length,
     truncated,
+    poolLamports: available.toString(),
+    totalLossLamports: totalLoss.toString(),
     rules: rules(),
   };
-  return { meta, rows, skipped };
+  return { meta, rows, skipped: settled.skipped };
 }

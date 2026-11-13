@@ -51,7 +51,14 @@ export async function runClaimedPayouts() {
     if (owing < DUST) continue;
     due.push({ wallet: row.wallet, lamports: owing });
   }
-  if (due.length === 0) throw new Error("Nobody in the snapshot is waiting for SOL.");
+  if (due.length === 0) {
+    const tiny = snapshot.rows.some((row) => row.status !== "sent" && BigInt(row.rebateLamports) > 0n);
+    throw new Error(
+      tiny
+        ? "Every share is under 0.005 SOL. Add SOL to the vault and take a new snapshot. Nothing was sent."
+        : "Nobody in the snapshot is waiting for SOL.",
+    );
+  }
 
   const balance = await vaultBalanceLamports();
   const total = due.reduce((sum, row) => sum + row.lamports, 0n);

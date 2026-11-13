@@ -24,7 +24,7 @@ git push
 
 This works when the deployment is built from that GitHub commit. The snapshot has wallet addresses and amounts, and no private key. Do not commit `.env`, `keys/`, or `data/payouts.json`. If the GitHub repo is public, the list in `data/snapshot.json` is public too.
 
-The rebate equals the loss in SOL. A bigger loss pays more SOL, until the payment hits $100 or half of the SOL spent buying the token.
+The spendable SOL in the vault is divided across the eligible losses. A wallet’s rebate is its loss divided by the total losses, multiplied by the SOL available. The largest loss gets the largest share. Two wallets with the same loss get the same share. A share cannot exceed that wallet’s loss, $100, or half the SOL spent buying.
 
 Rules: loss at least $5, no minimum hold, no stay-sold requirement, no cooldown. A gain does not cancel a loss. A sell with no matching buy is ignored. Under 0.005 SOL is not paid. USD amounts use the SOL price at the time of the snapshot.
 

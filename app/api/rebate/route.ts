@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
-import { assertWallet, payoutsFor, vaultView } from "@/lib/rebate";
-import { lookupWallet } from "@/lib/snapshot";
+import { lookupEligibility } from "@/lib/eligibility";
+import { assertWallet, vaultView } from "@/lib/rebate";
 
 export const dynamic = "force-dynamic";
 
@@ -14,13 +14,7 @@ export async function GET(request: Request) {
   if (wallet) {
     try {
       const address = assertWallet(wallet);
-      const found = lookupWallet(address);
-      const history = payoutsFor(address).map((row) => ({
-        sol: Number(row.lamports) / 1_000_000_000,
-        status: row.status,
-        signature: row.signature,
-      }));
-      return NextResponse.json({ ...found, history });
+      return NextResponse.json(lookupEligibility(address));
     } catch {
       return NextResponse.json({ error: "That is not a Solana address." }, { status: 400 });
     }

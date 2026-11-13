@@ -105,12 +105,20 @@ export function NavigationMenu({
                       </span>
                     </div>
                     <p className="text-xs text-[#5D5D5D] mt-0.5">
-                      Rewards & updates
+                      Check a wallet against the saved list
                     </p>
                   </div>
                 </div>
                 <ChevronRight className="w-4 h-4 text-[#8F8F8F] group-hover:text-[#0D0D0D] group-hover:translate-x-0.5 transition-all" />
               </button>
+
+              <div className="px-3.5 py-3 rounded-2xl bg-[#F8F9FA] border border-[#E5E7EB] text-xs text-[#5D5D5D] leading-relaxed">
+                <p className="font-semibold text-[#0D0D0D]">Who can get a rebate</p>
+                <p className="mt-1">You sold this token at a loss of at least $5.</p>
+                <p className="mt-1">The loss is from a buy of this token. A plain transfer does not count, and a gain does not cancel a loss.</p>
+                <p className="mt-1">The SOL in the vault is shared by loss. A bigger loss gets a bigger share. There is no minimum hold, and you do not sign anything.</p>
+                <p className="mt-1">If your address is not on the saved list, you are not eligible.</p>
+              </div>
 
               {/* 2. "About Dev" Button */}
               <button

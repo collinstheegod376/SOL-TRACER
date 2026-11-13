@@ -64,7 +64,6 @@ export interface LiveTransactionSummary {
 const RPC_ENDPOINTS = [
   process.env.SOLANA_RPC_URL || 'https://api.mainnet-beta.solana.com',
   'https://solana-rpc.publicnode.com',
-  'https://solana.drpc.org',
 ];
 
 /**
@@ -147,7 +146,7 @@ export async function getLiveAccountDetail(address: string): Promise<LiveAccount
   const solPrice = await getLiveSolPrice();
 
   if (!accountInfo || !accountInfo.value) {
-    // Account exists on chain with 0 lamports or uninitialized
+    // Account exists on chain with 0 SOL or uninitialized
     return {
       address,
       sol_balance: 0,
@@ -209,6 +208,30 @@ export async function getLiveAccountDetail(address: string): Promise<LiveAccount
     data_size: accountInfo.value.space || 0,
     mint_info,
   };
+}
+
+/**
+ * Fetch live mint info directly from on-chain SPL Token program
+ */
+export async function getLiveMintInfo(mint: string): Promise<LiveMintInfo | null> {
+  try {
+    const accountInfo = await callSolanaRpc<any>('getAccountInfo', [mint, { encoding: 'jsonParsed' }]);
+    if (!accountInfo || !accountInfo.value) return null;
+    const dataParsed = accountInfo.value.data?.parsed;
+    if (dataParsed?.type === 'mint') {
+      const info = dataParsed.info || {};
+      return {
+        decimals: Number(info.decimals ?? 0),
+        supply: String(info.supply ?? '0'),
+        mintAuthority: info.mintAuthority || null,
+        freezeAuthority: info.freezeAuthority || null,
+        isInitialized: Boolean(info.isInitialized),
+      };
+    }
+    return null;
+  } catch (err) {
+    return null;
+  }
 }
 
 /**

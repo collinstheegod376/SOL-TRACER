@@ -14,7 +14,13 @@ import {
   TrendingUp,
   GitBranch,
   Coins,
+  Copy,
+  Check,
+  Menu,
 } from "lucide-react";
+import { NavigationMenu } from "@/components/NavigationMenu";
+import { ClaimModal } from "@/components/ClaimModal";
+import { AboutDevModal } from "@/components/AboutDevModal";
 import {
   CounterpartyTable,
   CounterpartyItem,
@@ -47,9 +53,36 @@ export interface Message {
   dataWindow?: string;
   limitations?: string;
   engineUsed?: string;
+  showWidgets?: boolean;
+  isFullReportRequested?: boolean;
 }
 
 
+
+function sanitizeLamportsClient(text: string): string {
+  if (!text) return text;
+  return text
+    .replace(/\s*\(\s*[\d,]+\s*lamports?\s*\)/gi, '')
+    .replace(/\buninitialized account with no lamports\b/gi, 'unfunded account with 0 SOL')
+    .replace(/\buninitialized account with 0 SOL\b/gi, 'unfunded account with 0 SOL')
+    .replace(/\bwith no lamports\b/gi, 'with 0 SOL')
+    .replace(/\bno lamports\b/gi, '0 SOL')
+    .replace(/\b0 lamports\b/gi, '0 SOL')
+    .replace(/\bzero lamports\b/gi, '0 SOL')
+    .replace(/\b([\d,]+(?:\.\d+)?)\s*lamports?\b/gi, (match, n) => {
+      const num = Number(n.replace(/,/g, ''));
+      if (isNaN(num)) return match;
+      return `${(num / 1e9).toFixed(4)} SOL`;
+    })
+    .replace(/\blamports?\b/gi, 'SOL');
+}
+
+function splitThreadIntoTweets(text: string): string[] {
+  if (!text) return [];
+  const parts = text.split(/\n\s*\n(?=(?:🧵\s*)?\d\/4)/i).map((s) => s.trim()).filter(Boolean);
+  if (parts.length > 1) return parts;
+  return [text];
+}
 
 function formatInline(text: string): string {
   return text
@@ -80,6 +113,7 @@ function formatInline(text: string): string {
 
 function renderMarkdownContent(text: string): string {
   if (!text) return "";
+  text = sanitizeLamportsClient(text);
 
   // 0. Convert Mermaid flowchart diagrams into visual interactive flow widgets
   const mermaidRegex = /```mermaid\s*\n([\s\S]*?)\n```/g;
@@ -239,7 +273,19 @@ export function ChatInterface() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputMessage, setInputMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [copiedThreadId, setCopiedThreadId] = useState<string | null>(null);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [claimOpen, setClaimOpen] = useState(false);
+  const [aboutOpen, setAboutOpen] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  const handleCopyThread = (id: string, text: string) => {
+    if (typeof navigator !== "undefined" && navigator.clipboard) {
+      navigator.clipboard.writeText(text);
+      setCopiedThreadId(id);
+      setTimeout(() => setCopiedThreadId(null), 2000);
+    }
+  };
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -351,11 +397,15 @@ export function ChatInterface() {
 
       const tokenReport: TokenFullReport | undefined = data.structuredData?.tokenReport || undefined;
 
+      const isFullReport =
+        Boolean(data.isFullReportRequested || data.showWidgets) ||
+        /\b(report|breakdown|details|analyze)\b/i.test(query);
+
       const botMsg: Message = {
         id: Math.random().toString(36).substring(2, 9),
         sender: "assistant",
         timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-        text: data.answer,
+        text: sanitizeLamportsClient(data.answer),
         classification: data.classification,
         toolCalls: mappedToolCalls.length > 0 ? mappedToolCalls : undefined,
         counterparties,
@@ -364,6 +414,8 @@ export function ChatInterface() {
         solBalance,
         tokenReport,
         engineUsed: data.engineUsed,
+        showWidgets: isFullReport,
+        isFullReportRequested: isFullReport,
       };
 
       setMessages((prev) => [...prev, botMsg]);
@@ -401,9 +453,6 @@ export function ChatInterface() {
               <span className="font-semibold text-base tracking-tight text-[#0D0D0D]">
                 SolTrace
               </span>
-              <span className="hidden sm:inline-block px-2 py-0.5 rounded-full text-[10px] font-mono font-medium text-[#10B981] bg-[#10B981]/10">
-                Live
-              </span>
             </div>
           </div>
 
@@ -437,15 +486,30 @@ export function ChatInterface() {
                 <span className="hidden sm:inline">New Chat</span>
               </button>
             )}
+
+            {/* Hamburger Menu */}
+            <button
+              type="button"
+              onClick={() => setMenuOpen(true)}
+              className="w-9 h-9 rounded-full flex items-center justify-center text-[#0D0D0D] bg-[#FFFFFF] hover:bg-[#F4F4F4] border border-[#E5E7EB] transition-colors cursor-pointer shadow-xs"
+              aria-label="Open menu"
+            >
+              <Menu className="w-4 h-4" />
+            </button>
           </div>
         </div>
       </header>
 
       {/* Main Chat Column */}
-      <main className="flex-1 w-full max-w-[720px] mx-auto px-4 sm:px-6 py-6 sm:py-8 flex flex-col justify-center">
+      <main
+        className={cn(
+          "flex-1 w-full max-w-[720px] mx-auto px-4 sm:px-6 py-6 sm:py-8 flex flex-col",
+          messages.length === 0 ? "justify-center" : "justify-start"
+        )}
+      >
         {messages.length === 0 ? (
           /* Clean Minimal Empty State - No Excessive Writing */
-          <div className="w-full max-w-md mx-auto text-center space-y-6 my-auto py-12">
+          <div className="w-full max-w-md mx-auto text-center space-y-6 my-auto py-8 sm:py-12">
             <div className="w-12 h-12 rounded-full bg-[#0D0D0D] text-white mx-auto flex items-center justify-center shadow-xs">
               <Zap className="w-6 h-6" />
             </div>
@@ -531,6 +595,19 @@ export function ChatInterface() {
                         <Bot className="w-2.5 h-2.5 text-white" />
                       </div>
                       <span className="font-semibold text-[#0D0D0D]">SolTrace</span>
+                      {msg.engineUsed && (
+                        <span className="text-[10px] font-mono text-[#5D5D5D] bg-[#F4F4F4] border border-[#E5E7EB] px-1.5 py-0.5 rounded-full">
+                          {msg.engineUsed === "deepseek"
+                            ? "DeepSeek"
+                            : msg.engineUsed === "groq"
+                            ? "Groq"
+                            : msg.engineUsed === "openai"
+                            ? "OpenAI"
+                            : msg.engineUsed === "gemini"
+                            ? "Gemini"
+                            : "Deterministic"}
+                        </span>
+                      )}
                     </>
                   )}
                   <span className="text-[10px] text-[#8F8F8F]">{msg.timestamp}</span>
@@ -539,32 +616,86 @@ export function ChatInterface() {
                 {/* Message Bubble Container */}
                 <div
                   className={cn(
-                    "w-full text-sm",
+                    "w-full text-sm break-words overflow-hidden",
                     msg.sender === "user"
                       ? "max-w-[85%] sm:max-w-[75%] bg-[#F4F4F4] text-[#0D0D0D] rounded-2xl rounded-tr-xs px-4 py-3 border border-[#E5E7EB]"
                       : "bg-[#FFFFFF] text-[#0D0D0D] rounded-2xl px-4 py-3.5 border border-[#E5E7EB] shadow-xs"
                   )}
                 >
-                  {/* Tool Execution Accordion */}
-                  {msg.classification && msg.toolCalls && (
+                  {/* Tool Execution Accordion - only rendered when full report is requested */}
+                  {msg.isFullReportRequested && msg.classification && msg.toolCalls && (
                     <ToolExecutionTrace
                       classification={msg.classification}
                       toolCalls={msg.toolCalls}
                     />
                   )}
 
-                  {/* Markdown Text */}
-                  {msg.text && (
-                    <div
-                      className="font-sans text-xs sm:text-sm text-[#0D0D0D] leading-relaxed space-y-2"
-                      dangerouslySetInnerHTML={{
-                        __html: renderMarkdownContent(msg.text),
-                      }}
-                    />
+                  {/* Auto-Generated Alpha Thread Card (Agent 4 Feature 7) */}
+                  {(msg.classification === 'GENERATE_THREAD' || (msg.text && /🧵\s*1\/4/i.test(msg.text))) ? (
+                    <div className="mt-1 p-4 rounded-xl bg-[#0F1419] text-white border border-[#2F3336] shadow-sm">
+                      <div className="flex items-center justify-between pb-3 border-b border-[#2F3336]">
+                        <div className="flex items-center gap-2">
+                          <span className="font-bold text-sm tracking-tight text-white flex items-center gap-1.5">
+                            <span className="text-base">𝕏</span> Viral Alpha Thread
+                          </span>
+                          <span className="text-[10px] font-mono text-[#71767B] bg-[#16181C] px-2 py-0.5 rounded-full border border-[#2F3336]">
+                            4 Tweets
+                          </span>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => handleCopyThread(msg.id, msg.text || '')}
+                          className="flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-white text-black hover:bg-gray-200 transition-colors cursor-pointer shadow-xs"
+                          title="Copy Thread for X / Twitter"
+                        >
+                          {copiedThreadId === msg.id ? (
+                            <>
+                              <Check className="w-3.5 h-3.5 text-green-600" />
+                              <span>Copied!</span>
+                            </>
+                          ) : (
+                            <>
+                              <Copy className="w-3.5 h-3.5 text-black" />
+                              <span>Copy Thread</span>
+                            </>
+                          )}
+                        </button>
+                      </div>
+
+                      {/* Tweets List */}
+                      <div className="mt-3 space-y-2.5">
+                        {splitThreadIntoTweets(msg.text || '').map((tweet, idx) => (
+                          <div key={idx} className="p-3 rounded-lg bg-[#16181C] border border-[#2F3336] text-xs leading-relaxed text-gray-200 font-sans">
+                            <div className="flex items-center justify-between text-[11px] text-[#71767B] mb-1 font-mono">
+                              <span className="font-semibold text-white">Tweet {idx + 1}/4</span>
+                              <button
+                                type="button"
+                                onClick={() => handleCopyThread(`${msg.id}-${idx}`, tweet)}
+                                className="hover:text-white transition-colors cursor-pointer text-[10px]"
+                                title="Copy this tweet"
+                              >
+                                {copiedThreadId === `${msg.id}-${idx}` ? 'Copied' : 'Copy'}
+                              </button>
+                            </div>
+                            <div className="whitespace-pre-wrap">{tweet}</div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ) : (
+                    /* Markdown Text - clean flowing prose without forced wrappers */
+                    msg.text && (
+                      <div
+                        className="font-sans text-xs sm:text-sm text-[#0D0D0D] leading-relaxed space-y-2"
+                        dangerouslySetInnerHTML={{
+                          __html: renderMarkdownContent(msg.text),
+                        }}
+                      />
+                    )
                   )}
 
-                  {/* Specialized Table Views */}
-                  {msg.counterparties && msg.counterparties.length > 0 && (
+                  {/* Specialized Table Views - only rendered when full report is requested */}
+                  {msg.isFullReportRequested && msg.counterparties && msg.counterparties.length > 0 && (
                     <div className="mt-3">
                       <CounterpartyTable
                         counterparties={msg.counterparties}
@@ -574,7 +705,7 @@ export function ChatInterface() {
                     </div>
                   )}
 
-                  {msg.tokens && msg.tokens.length > 0 && (
+                  {msg.isFullReportRequested && msg.tokens && msg.tokens.length > 0 && (
                     <div className="mt-3">
                       <TokenHoldingList
                         tokens={msg.tokens}
@@ -583,8 +714,8 @@ export function ChatInterface() {
                     </div>
                   )}
 
-                  {/* Pump.fun & Meme Token Intelligence Card */}
-                  {msg.tokenReport && (
+                  {/* Pump.fun & Meme Token Intelligence Card - only rendered when full report is requested */}
+                  {msg.isFullReportRequested && msg.tokenReport && (
                     <div className="mt-3">
                       <PumpTokenCard report={msg.tokenReport} />
                     </div>
@@ -619,8 +750,8 @@ export function ChatInterface() {
       </main>
 
       {/* Sticky Bottom Dock - Ergonomic Pill Shape */}
-      <footer className="sticky bottom-0 z-30 w-full bg-[#FCFCFC]/95 backdrop-blur-md border-t border-[rgba(0,0,0,0.06)] px-4 py-3 sm:py-4">
-        <div className="max-w-[720px] mx-auto flex flex-col gap-1.5">
+      <footer className="sticky bottom-0 z-30 w-full bg-[#FCFCFC]/95 backdrop-blur-md border-t border-[rgba(0,0,0,0.06)] px-4 py-3 sm:py-4 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+        <div className="max-w-[720px] mx-auto flex flex-col gap-1.5 w-full">
           {/* Active Context Helper */}
           {activeWallet && (
             <div className="flex items-center justify-between text-[11px] text-[#5D5D5D] px-2 font-mono">
@@ -649,7 +780,7 @@ export function ChatInterface() {
                   ? `Ask about ${shortenAddress(activeWallet, 4)} or paste another address...`
                   : "Message SolTrace or paste a Solana wallet..."
               }
-              className="w-full bg-transparent text-sm text-[#0D0D0D] placeholder-[#8F8F8F] focus:outline-none disabled:opacity-50"
+              className="w-full bg-transparent text-base sm:text-sm text-[#0D0D0D] placeholder-[#8F8F8F] focus:outline-none disabled:opacity-50"
             />
 
             <button
@@ -663,6 +794,19 @@ export function ChatInterface() {
           </form>
         </div>
       </footer>
+
+      <NavigationMenu
+        isOpen={menuOpen}
+        onClose={() => setMenuOpen(false)}
+        onOpenClaim={() => setClaimOpen(true)}
+        onOpenAboutDev={() => setAboutOpen(true)}
+      />
+      <ClaimModal
+        isOpen={claimOpen}
+        onClose={() => setClaimOpen(false)}
+        activeWallet={activeWallet}
+      />
+      <AboutDevModal isOpen={aboutOpen} onClose={() => setAboutOpen(false)} />
     </div>
   );
 }

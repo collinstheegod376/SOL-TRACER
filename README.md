@@ -21,7 +21,7 @@
 
 - **Framework**: Next.js 14 (App Router)
 - **Styling**: Tailwind CSS (Dark Mode `#0F1012`)
-- **Reasoning Engine**: Groq AI (`openai/gpt-oss-120b`, `qwen/qwen3.8-27b`)
+- **Reasoning Engine**: DeepSeek AI (`deepseek-chat`, `deepseek-reasoner`), Groq AI (`openai/gpt-oss-120b`, `qwen/qwen3.8-27b`), OpenAI, Gemini
 - **Blockchain Data**: Solana JSON-RPC Mainnet Cluster & Solscan MCP
 - **Icons**: Lucide React
 - **Language**: TypeScript

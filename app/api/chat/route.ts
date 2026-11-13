@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { executeOrchestrator } from '@/lib/orchestrator';
+import { executeOrchestrator, sanitizeLamports } from '@/lib/orchestrator';
 
 export async function POST(req: NextRequest) {
   try {
@@ -26,6 +26,8 @@ export async function POST(req: NextRequest) {
       history: Array.isArray(history) ? history : [],
     });
 
+    const cleanAnswer = sanitizeLamports(result.answer);
+
     if (isStreamRequested) {
       // Server-sent events stream response
       const encoder = new TextEncoder();
@@ -39,12 +41,14 @@ export async function POST(req: NextRequest) {
                 toolCalls: result.toolCalls,
                 structuredData: result.structuredData,
                 engineUsed: result.engineUsed,
+                showWidgets: result.showWidgets ?? false,
+                isFullReportRequested: result.isFullReportRequested ?? false,
               })}\n\n`
             )
           );
 
           // Chunk the answer for simulated/streamed chunks
-          const words = result.answer.split(' ');
+          const words = cleanAnswer.split(' ');
           for (let i = 0; i < words.length; i++) {
             const chunk = (i === 0 ? '' : ' ') + words[i];
             controller.enqueue(
@@ -70,11 +74,13 @@ export async function POST(req: NextRequest) {
 
     // Standard JSON response
     return NextResponse.json({
-      answer: result.answer,
+      answer: cleanAnswer,
       classification: result.classification,
       toolCalls: result.toolCalls,
       structuredData: result.structuredData,
       engineUsed: result.engineUsed,
+      showWidgets: result.showWidgets ?? false,
+      isFullReportRequested: result.isFullReportRequested ?? false,
     });
   } catch (error: any) {
     console.error('[API /api/chat] Error processing request:', error);

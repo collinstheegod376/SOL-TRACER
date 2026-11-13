@@ -116,7 +116,7 @@ export interface ToolDefinition {
 export const SOLSCAN_TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: 'account_detail',
-    description: 'Retrieve SOL balance, lamports, account type, owner program, and rent info for a Solana address.',
+    description: 'Retrieve SOL balance, account type, owner program, and rent info for a Solana address.',
     parameters: {
       type: 'object',
       properties: {

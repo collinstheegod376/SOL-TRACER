@@ -12,7 +12,25 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-export type QueryClassification = "LOOKUP" | "ENRICHMENT" | "AGGREGATION" | "CONVERSATIONAL" | "FLOW_DIAGRAM" | "SECURITY_AUDIT" | "DEX_TRADES" | "MULTI_HOP" | "TOKEN_INTEL" | "DEV_DOSSIER" | "BUNDLE_CHECK";
+export type QueryClassification =
+  | "LOOKUP"
+  | "ENRICHMENT"
+  | "AGGREGATION"
+  | "CONVERSATIONAL"
+  | "FLOW_DIAGRAM"
+  | "SECURITY_AUDIT"
+  | "DEX_TRADES"
+  | "MULTI_HOP"
+  | "TOKEN_INTEL"
+  | "DEV_DOSSIER"
+  | "BUNDLE_CHECK"
+  | "RISK_INTERCEPT"
+  | "RUG_POST_MORTEM"
+  | "TOKEN_COMPARISON"
+  | "SECTOR_TRACKER"
+  | "INVESTMENT_SIMULATION"
+  | "DAILY_BRIEFING"
+  | "GENERATE_THREAD";
 
 export interface ToolCallTrace {
   id: string;
@@ -95,6 +113,48 @@ const CLASSIFICATION_BADGES: Record<
     bg: "bg-[#F4F4F4]",
     text: "text-[#0D0D0D]",
     border: "border-[#E5E7EB]",
+  },
+  RISK_INTERCEPT: {
+    label: "RISK INTERCEPT",
+    bg: "bg-[#EF4444]/10",
+    text: "text-[#EF4444]",
+    border: "border-[#EF4444]/20",
+  },
+  RUG_POST_MORTEM: {
+    label: "RUG POST-MORTEM",
+    bg: "bg-[#EF4444]/10",
+    text: "text-[#EF4444]",
+    border: "border-[#EF4444]/20",
+  },
+  TOKEN_COMPARISON: {
+    label: "CA VS CA",
+    bg: "bg-[#F4F4F4]",
+    text: "text-[#0D0D0D]",
+    border: "border-[#E5E7EB]",
+  },
+  SECTOR_TRACKER: {
+    label: "SECTOR NARRATIVE",
+    bg: "bg-[#F4F4F4]",
+    text: "text-[#0D0D0D]",
+    border: "border-[#E5E7EB]",
+  },
+  INVESTMENT_SIMULATION: {
+    label: "WHAT-IF SIMULATOR",
+    bg: "bg-[#F4F4F4]",
+    text: "text-[#0D0D0D]",
+    border: "border-[#E5E7EB]",
+  },
+  DAILY_BRIEFING: {
+    label: "DAILY BRIEFING",
+    bg: "bg-[#F4F4F4]",
+    text: "text-[#0D0D0D]",
+    border: "border-[#E5E7EB]",
+  },
+  GENERATE_THREAD: {
+    label: "ALPHA THREAD",
+    bg: "bg-[#1D9BF0]/10",
+    text: "text-[#1D9BF0]",
+    border: "border-[#1D9BF0]/20",
   },
 };
 

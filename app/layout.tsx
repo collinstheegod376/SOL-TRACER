@@ -1,10 +1,11 @@
-import type { Metadata, Viewport } from "next";
+﻿import type { Metadata, Viewport } from "next";
 import "./globals.css";
 
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
-  maximumScale: 5,
+  maximumScale: 1,
+  userScalable: false,
   viewportFit: "cover",
   themeColor: "#FCFCFC",
 };
@@ -12,7 +13,7 @@ export const viewport: Viewport = {
 export const metadata: Metadata = {
   metadataBase: new URL("https://soltracer.vercel.app"),
   title: {
-    default: "SolTrace (Sol Tracer AI) — AI Solana On-Chain Transaction Scanner",
+    default: "SolTrace (Sol Tracer AI) â€” AI Solana On-Chain Transaction Scanner",
     template: "%s | Sol Tracer AI",
   },
   description:
@@ -42,12 +43,12 @@ export const metadata: Metadata = {
   ],
   authors: [
     {
-      name: "promisedkillua",
+      name: "nerfed_killua",
       url: "https://www.promisedkillua.sbs/",
     },
   ],
-  creator: "promisedkillua",
-  publisher: "promisedkillua",
+  creator: "nerfed_killua",
+  publisher: "nerfed_killua",
   applicationName: "Sol Tracer AI",
   generator: "Next.js",
   referrer: "origin-when-cross-origin",
@@ -64,16 +65,16 @@ export const metadata: Metadata = {
     locale: "en_US",
     url: "https://soltracer.vercel.app",
     siteName: "Sol Tracer AI",
-    title: "SolTrace | Sol Tracer AI — Solana On-Chain Transaction Scanner",
+    title: "SolTrace | Sol Tracer AI â€” Solana On-Chain Transaction Scanner",
     description:
       "Inspect Solana wallets, visual money flow maps, security drainer audits, and DEX trades using plain natural language.",
   },
   twitter: {
     card: "summary_large_image",
-    title: "SolTrace | Sol Tracer AI — Solana On-Chain Transaction Scanner",
+    title: "SolTrace | Sol Tracer AI â€” Solana On-Chain Transaction Scanner",
     description:
       "Conversational AI blockchain scanner for Solana wallets, visual money flow maps, security drainer audits, and DEX trades.",
-    creator: "@promisedkillua",
+    creator: "@nerfed_killua",
   },
   robots: {
     index: true,
@@ -110,7 +111,7 @@ const jsonLd = {
       "softwareVersion": "1.0.0",
       "creator": {
         "@type": "Person",
-        "name": "promisedkillua",
+        "name": "nerfed_killua",
         "url": "https://www.promisedkillua.sbs/",
       },
       "offers": {
@@ -127,7 +128,7 @@ const jsonLd = {
       "description": "AI-Powered Solana On-Chain Transaction Scanner",
       "publisher": {
         "@type": "Person",
-        "name": "promisedkillua",
+        "name": "nerfed_killua",
         "url": "https://www.promisedkillua.sbs/",
       },
     },
@@ -161,3 +162,4 @@ export default function RootLayout({
     </html>
   );
 }
+

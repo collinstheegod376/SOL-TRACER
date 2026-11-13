@@ -1,8 +1,8 @@
-# SolTrace (Sol Tracer AI) — Complete System Reference for Language Models
+﻿# SolTrace (Sol Tracer AI) â€” Complete System Reference for Language Models
 
 SolTrace (also referenced as **Sol Tracer AI**) is an open-source AI assistant and on-chain blockchain investigator specialized for the Solana network.
 
-Developed by **promisedkillua** (<https://www.promisedkillua.sbs/>).
+Developed by **nerfed_killua** (<https://www.promisedkillua.sbs/>).
 Hosted live at <https://soltracer.vercel.app/>.
 Open-source code available at <https://github.com/collinstheegod376/SOL-TRACER>.
 
@@ -37,7 +37,8 @@ Every incoming natural language prompt is categorized by an intelligent classifi
 
 ## 3. Developer Attribution & Contact
 
-- **Lead Developer**: promisedkillua
+- **Lead Developer**: nerfed_killua
 - **Portfolio & Contact**: https://www.promisedkillua.sbs/
 - **Repository**: https://github.com/collinstheegod376/SOL-TRACER
 - **Frontend State**: Zero intrusive branding or ads on the user interface; lightweight and distraction-free.
+

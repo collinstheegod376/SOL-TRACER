@@ -73,5 +73,11 @@ The test suite validates all 15 core workflows:
 
 ---
 
+## Loss rebate
+
+The rebate is a vault transfer. The dashboard and the Claim button are described in [REBATE.md](REBATE.md).
+
+---
+
 ## 🛡️ License
 ISC

@@ -27,6 +27,13 @@ yarn-error.log*
 .env
 .env.local
 
+# operator vault secret. Never commit.
+/keys/
+
+# rebate runtime files. data/snapshot.json is the eligibility list and is committed.
+/data/*
+!/data/snapshot.json
+
 # vercel
 .vercel
 
@@ -42,3 +49,6 @@ programs/**/target
 packages/**/dist
 apps/**/.next
 apps/**/dist
+
+__pycache__/
+*.pyc
